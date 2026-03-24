@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="google" content="notranslate" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="/manifest.json" />
+  <title>HabitaPleno | Sistema de Gestão Condominial</title>
+  <style>
+    body { background-color: #0f172a; margin: 0; }
+    #root:empty {
+      background-color: #0f172a;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    #root:empty::after {
+      content: 'Iniciando sistema...';
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      font-size: 10px;
+      opacity: 0.6;
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.8; } }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>

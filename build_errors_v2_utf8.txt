@@ -1,0 +1,89 @@
+﻿
+> habitapleno-web@0.0.0 build
+> tsc -b && vite build
+
+src/App.tsx(53,17): error TS2339: Property 'loading' does not exist on type 'AuthContextType'.
+src/components/ModuleRoute.tsx(14,19): error TS2339: Property 'loading' does not exist on type 'AuthContextType'.
+src/components/PrivateRoute.tsx(6,19): error TS2339: Property 'loading' does not exist on type 'AuthContextType'.
+src/contexts/AuthContext.tsx(109,9): error TS6133: 'isAdmin' is declared but its value is never read.
+src/contexts/AuthContext.tsx(110,9): error TS6133: 'isOperator' is declared but its value is never read.
+src/pages/AreasAdminPage.tsx(130,23): error TS2739: Type '{ id: `${string}-${string}-${string}-${string}-${string}`; }' is missing the following properties from type 'Area': nome, capacidade, status
+src/pages/CondosPage.tsx(30,87): error TS6133: 'id' is declared but its value is never read.
+src/pages/CondosPage.tsx(31,65): error TS6133: 't' is declared but its value is never read.
+src/pages/DashboardPage.tsx(78,60): error TS2352: Conversion of type '{ visibleUnits: never[]; settings: { condoName: string; currentRefMonth: string; gasPrice: number; dueDay: number; unitTypes: never[]; }; visibleHistory: never[]; history: never[]; extraFees: never[]; expenses: never[]; ... 49 more ...; deleteImprovement: () => Promise<...>; }' to type 'AppContextType' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ visibleUnits: never[]; settings: { condoName: string; currentRefMonth: string; gasPrice: number; dueDay: number; unitTypes: never[]; }; visibleHistory: never[]; history: never[]; extraFees: never[]; expenses: never[]; ... 49 more ...; deleteImprovement: () => Promise<...>; }' is missing the following properties from type 'AppContextType': units, accessControl, visiblePackages, addArea, and 13 more.
+src/pages/DashboardPage.tsx(181,30): error TS7006: Parameter 'u' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(206,31): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(284,53): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(285,62): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(319,43): error TS7006: Parameter 'h' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(500,32): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(507,18): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(507,21): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(514,22): error TS7006: Parameter 'h' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(533,43): error TS7006: Parameter 'h' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(547,57): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(586,45): error TS7006: Parameter 'h' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(588,58): error TS7006: Parameter 'u' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(594,36): error TS7006: Parameter 'u' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(637,55): error TS7006: Parameter 'sum' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(637,60): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(645,21): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(646,22): error TS7006: Parameter 'sum' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(646,27): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(653,80): error TS7006: Parameter 'h' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(655,21): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(656,21): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(657,35): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(660,40): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(663,44): error TS7006: Parameter 'h' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(718,30): error TS7006: Parameter 'u' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(727,57): error TS7006: Parameter 'f' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(740,30): error TS7006: Parameter 'u' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(745,57): error TS7006: Parameter 'f' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(815,25): error TS7006: Parameter 'record' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(905,29): error TS7006: Parameter 'record' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(1049,32): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(1063,21): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(1069,20): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(1069,23): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(1072,33): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(1077,43): error TS7006: Parameter 'h' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(1079,48): error TS7006: Parameter 'u' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(1083,46): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(1085,45): error TS7006: Parameter 'h' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(1087,37): error TS7006: Parameter 'u' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(1296,73): error TS7006: Parameter 'sum' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(1296,78): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(1299,77): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(1341,65): error TS7006: Parameter 'sum' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(1341,70): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(1344,149): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(1492,77): error TS7006: Parameter 'notice' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(1598,73): error TS7006: Parameter 'h' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(1598,91): error TS7006: Parameter 'u' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(1598,169): error TS7006: Parameter 'record' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(1748,78): error TS7006: Parameter 'notice' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(1785,87): error TS7006: Parameter 'oco' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(1955,62): error TS7006: Parameter 'notice' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(2036,70): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(2047,83): error TS7006: Parameter 'h' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(2128,50): error TS7006: Parameter 'u' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(2217,63): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(2776,46): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/pages/DashboardPage.tsx(2776,77): error TS7006: Parameter 'bank' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(31,9): error TS6133: 'tenantId' is declared but its value is never read.
+src/pages/FinancialPage.tsx(51,65): error TS6133: 't' is declared but its value is never read.
+src/pages/FinancialPage.tsx(52,62): error TS6133: 'p' is declared but its value is never read.
+src/pages/FinancialPage.tsx(52,70): error TS6133: 'm' is declared but its value is never read.
+src/pages/FinancialPage.tsx(52,81): error TS6133: 'a' is declared but its value is never read.
+src/pages/FinancialPage.tsx(132,56): error TS6133: 'force' is declared but its value is never read.
+src/pages/FinancialPage.tsx(463,99): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(676,61): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(677,58): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(705,123): error TS7006: Parameter 'cat' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(929,93): error TS7006: Parameter 'expense' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(1147,47): error TS6133: 'val' is declared but its value is never read.
+src/pages/FinancialPage.tsx(1210,46): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(1210,77): error TS7006: Parameter 'bank' implicitly has an 'any' type.
+src/pages/RegisterPage.tsx(18,27): error TS2339: Property 'loading' does not exist on type 'AuthContextType'.

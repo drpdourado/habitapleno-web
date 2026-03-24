@@ -1,0 +1,141 @@
+﻿
+> habitapleno-web@0.0.0 build
+> tsc -b && vite build
+
+src/components/Navbar.tsx(14,1): error TS6133: 'usePlan' is declared but its value is never read.
+src/components/Navbar.tsx(22,132): error TS6133: 'id' is declared but its value is never read.
+src/components/Navbar.tsx(33,130): error TS6133: 'm' is declared but its value is never read.
+src/components/NotificationBell.tsx(3,33): error TS2724: '"../contexts/NotificationContext"' has no exported member named 'AppNotification'. Did you mean 'useNotification'?
+src/components/NotificationBell.tsx(9,13): error TS2339: Property 'notifications' does not exist on type 'NotificationContextType'.
+src/components/NotificationBell.tsx(9,28): error TS2339: Property 'unreadCount' does not exist on type 'NotificationContextType'.
+src/components/NotificationBell.tsx(9,41): error TS2339: Property 'markAsRead' does not exist on type 'NotificationContextType'.
+src/components/NotificationBell.tsx(9,53): error TS2339: Property 'markAllAsRead' does not exist on type 'NotificationContextType'.
+src/components/NotificationBell.tsx(85,59): error TS7006: Parameter 'notif' implicitly has an 'any' type.
+src/components/QuickSearchModal.tsx(28,13): error TS2339: Property 'units' does not exist on type 'AppContextType'.
+src/components/QuickSearchModal.tsx(28,20): error TS2339: Property 'accessControl' does not exist on type 'AppContextType'.
+src/components/QuickSearchModal.tsx(65,23): error TS7006: Parameter 'unit' implicitly has an 'any' type.
+src/components/QuickSearchModal.tsx(78,48): error TS7006: Parameter 'dep' implicitly has an 'any' type.
+src/components/QuickSearchModal.tsx(78,53): error TS7006: Parameter 'idx' implicitly has an 'any' type.
+src/components/QuickSearchModal.tsx(88,66): error TS2339: Property 'unitId' does not exist on type '{ condominiumId: string; role: string; profileId: string; }'.
+src/components/QuickSearchModal.tsx(88,88): error TS2367: This comparison appears to be unintentional because the types 'string' and '() => string' have no overlap.
+src/components/QuickSearchModal.tsx(104,44): error TS7006: Parameter 'dep' implicitly has an 'any' type.
+src/components/QuickSearchModal.tsx(104,49): error TS7006: Parameter 'idx' implicitly has an 'any' type.
+src/components/QuickSearchModal.tsx(117,37): error TS7006: Parameter 'veh' implicitly has an 'any' type.
+src/components/QuickSearchModal.tsx(117,42): error TS7006: Parameter 'idx' implicitly has an 'any' type.
+src/components/QuickSearchModal.tsx(134,31): error TS7006: Parameter 'acc' implicitly has an 'any' type.
+src/components/QuickSearchModal.tsx(158,57): error TS2367: This comparison appears to be unintentional because the types 'string' and '() => string' have no overlap.
+src/components/QuickSearchModal.tsx(163,57): error TS2367: This comparison appears to be unintentional because the types 'string' and '() => string' have no overlap.
+src/components/QuickSearchModal.tsx(163,100): error TS2339: Property 'unitId' does not exist on type '{ condominiumId: string; role: string; profileId: string; }'.
+src/components/QuickSearchModal.tsx(300,63): error TS7006: Parameter 'u' implicitly has an 'any' type.
+src/components/QuickSearchModal.tsx(300,96): error TS7006: Parameter 'unit' implicitly has an 'any' type.
+src/components/QuickSearchModal.tsx(313,81): error TS7006: Parameter 'dep' implicitly has an 'any' type.
+src/components/QuickSearchModal.tsx(313,86): error TS7006: Parameter 'idx' implicitly has an 'any' type.
+src/components/QuickSearchModal.tsx(328,103): error TS2339: Property 'unitId' does not exist on type '{ condominiumId: string; role: string; profileId: string; }'.
+src/components/QuickSearchModal.tsx(328,131): error TS2367: This comparison appears to be unintentional because the types 'string' and '() => string' have no overlap.
+src/components/QuickSearchModal.tsx(367,63): error TS7006: Parameter 'u' implicitly has an 'any' type.
+src/components/QuickSearchModal.tsx(367,96): error TS7006: Parameter 'unit' implicitly has an 'any' type.
+src/components/QuickSearchModal.tsx(375,76): error TS7006: Parameter 'veh' implicitly has an 'any' type.
+src/components/QuickSearchModal.tsx(375,81): error TS7006: Parameter 'vIdx' implicitly has an 'any' type.
+src/pages/AccessControlPage.tsx(60,9): error TS6133: 'addAccessControl' is declared but its value is never read.
+src/pages/AccessControlPage.tsx(61,9): error TS6133: 'deleteAccessControl' is declared but its value is never read.
+src/pages/AccessControlPage.tsx(62,9): error TS6133: 'registerEntry' is declared but its value is never read.
+src/pages/AccessControlPage.tsx(63,9): error TS6133: 'registerExit' is declared but its value is never read.
+src/pages/AccessControlPage.tsx(64,9): error TS6133: 'addPackage' is declared but its value is never read.
+src/pages/AccessControlPage.tsx(65,9): error TS6133: 'updatePackage' is declared but its value is never read.
+src/pages/AccessControlPage.tsx(66,9): error TS6133: 'deletePackage' is declared but its value is never read.
+src/pages/AccessControlPage.tsx(79,65): error TS6133: 't' is declared but its value is never read.
+src/pages/AccessControlPage.tsx(80,62): error TS6133: 'p' is declared but its value is never read.
+src/pages/AccessControlPage.tsx(80,70): error TS6133: 'm' is declared but its value is never read.
+src/pages/AccessControlPage.tsx(80,81): error TS6133: 'a' is declared but its value is never read.
+src/pages/AccessControlPage.tsx(162,66): error TS7006: Parameter 'u' implicitly has an 'any' type.
+src/pages/AccessControlPage.tsx(163,59): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/pages/AccessControlPage.tsx(193,30): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/pages/AccessControlPage.tsx(197,28): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/pages/AccessControlPage.tsx(202,53): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/pages/AccessControlPage.tsx(203,64): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/pages/AccessControlPage.tsx(206,63): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/pages/AccessControlPage.tsx(409,49): error TS7006: Parameter 'u' implicitly has an 'any' type.
+src/pages/AccessControlPage.tsx(421,61): error TS7006: Parameter 'dep' implicitly has an 'any' type.
+src/pages/AccessControlPage.tsx(421,66): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/pages/AccessControlPage.tsx(850,104): error TS7006: Parameter 'u' implicitly has an 'any' type.
+src/pages/AccessControlPage.tsx(902,92): error TS7006: Parameter 'u' implicitly has an 'any' type.
+src/pages/AccessControlPage.tsx(1036,56): error TS7006: Parameter 'u' implicitly has an 'any' type.
+src/pages/AccessControlPage.tsx(1142,44): error TS7006: Parameter 'u' implicitly has an 'any' type.
+src/pages/AreasAdminPage.tsx(35,13): error TS2339: Property 'sendNotification' does not exist on type 'NotificationContextType'.
+src/pages/AreasAdminPage.tsx(36,20): error TS2339: Property 'addArea' does not exist on type 'AppContextType'.
+src/pages/AreasAdminPage.tsx(36,29): error TS2339: Property 'updateArea' does not exist on type 'AppContextType'.
+src/pages/AreasAdminPage.tsx(36,41): error TS2339: Property 'deleteArea' does not exist on type 'AppContextType'.
+src/pages/AreasAdminPage.tsx(130,23): error TS2739: Type '{ id: `${string}-${string}-${string}-${string}-${string}`; }' is missing the following properties from type 'Area': nome, capacidade, status
+src/pages/BankAccountsPage.tsx(16,27): error TS2339: Property 'addBankAccount' does not exist on type 'AppContextType'.
+src/pages/BankAccountsPage.tsx(16,43): error TS2339: Property 'updateBankAccount' does not exist on type 'AppContextType'.
+src/pages/BankAccountsPage.tsx(16,62): error TS2339: Property 'deleteBankAccount' does not exist on type 'AppContextType'.
+src/pages/BankAccountsPage.tsx(32,21): error TS2345: Argument of type 'string' is not assignable to parameter of type 'SetStateAction<"corrente" | "poupanca" | "investimento">'.
+src/pages/BankAccountsPage.tsx(33,39): error TS2339: Property 'initialBalance' does not exist on type 'BankAccount'.
+src/pages/BankAccountsPage.tsx(34,23): error TS2345: Argument of type 'string' is not assignable to parameter of type 'SetStateAction<"ativa" | "inativa">'.
+src/pages/BankAccountsPage.tsx(53,17): error TS2353: Object literal may only specify known properties, and 'initialBalance' does not exist in type 'BankAccount'.
+src/pages/BankAccountsPage.tsx(185,73): error TS2339: Property 'initialBalance' does not exist on type 'BankAccount'.
+src/pages/BookingPage.tsx(36,13): error TS2339: Property 'sendNotification' does not exist on type 'NotificationContextType'.
+src/pages/CondoPlansPage.tsx(55,13): error TS2339: Property 'isSuperAdmin' does not exist on type 'AuthContextType'.
+src/pages/CondosPage.tsx(30,87): error TS6133: 'id' is declared but its value is never read.
+src/pages/CondosPage.tsx(31,65): error TS6133: 't' is declared but its value is never read.
+src/pages/DocumentsPage.tsx(23,24): error TS2339: Property 'addDocument' does not exist on type 'AppContextType'.
+src/pages/DocumentsPage.tsx(23,37): error TS2339: Property 'deleteDocument' does not exist on type 'AppContextType'.
+src/pages/FinancialPage.tsx(31,9): error TS6133: 'tenantId' is declared but its value is never read.
+src/pages/FinancialPage.tsx(51,65): error TS6133: 't' is declared but its value is never read.
+src/pages/FinancialPage.tsx(52,62): error TS6133: 'p' is declared but its value is never read.
+src/pages/FinancialPage.tsx(52,70): error TS6133: 'm' is declared but its value is never read.
+src/pages/FinancialPage.tsx(52,81): error TS6133: 'a' is declared but its value is never read.
+src/pages/FinancialPage.tsx(132,56): error TS6133: 'force' is declared but its value is never read.
+src/pages/FinancialPage.tsx(261,17): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(262,17): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(263,17): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(264,16): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(264,19): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(265,52): error TS7006: Parameter 'sum' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(265,57): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(269,17): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(270,17): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(271,14): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(275,17): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(276,17): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(278,17): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(279,14): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(294,51): error TS7006: Parameter 'sum' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(294,56): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(463,99): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(676,61): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(677,58): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(705,123): error TS7006: Parameter 'cat' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(929,93): error TS7006: Parameter 'expense' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(1147,47): error TS6133: 'val' is declared but its value is never read.
+src/pages/FinancialPage.tsx(1210,46): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/pages/FinancialPage.tsx(1210,77): error TS7006: Parameter 'bank' implicitly has an 'any' type.
+src/pages/HistoryDetailsPage.tsx(110,9): error TS2554: Expected 2 arguments, but got 1.
+src/pages/HistoryDetailsPage.tsx(174,9): error TS2554: Expected 2 arguments, but got 1.
+src/pages/HistoryDetailsPage.tsx(191,13): error TS2554: Expected 2 arguments, but got 1.
+src/pages/HistoryDetailsPage.tsx(224,9): error TS2554: Expected 2 arguments, but got 1.
+src/pages/HistoryDetailsPage.tsx(789,41): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/pages/HistoryDetailsPage.tsx(810,45): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/pages/HistoryDetailsPage.tsx(827,41): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/pages/ImprovementsPage.tsx(32,27): error TS2339: Property 'addImprovement' does not exist on type 'AppContextType'.
+src/pages/ImprovementsPage.tsx(32,43): error TS2339: Property 'updateImprovement' does not exist on type 'AppContextType'.
+src/pages/ImprovementsPage.tsx(32,62): error TS2339: Property 'deleteImprovement' does not exist on type 'AppContextType'.
+src/pages/ManutencoesPage.tsx(27,41): error TS2339: Property 'updateManutencao' does not exist on type 'AppContextType'.
+src/pages/ManutencoesPage.tsx(27,59): error TS2339: Property 'deleteManutencao' does not exist on type 'AppContextType'.
+src/pages/ManutencoesPage.tsx(27,77): error TS2339: Property 'concluirManutencao' does not exist on type 'AppContextType'.
+src/pages/MobileReading.tsx(19,69): error TS2339: Property 'saveCurrentReading' does not exist on type 'AppContextType'.
+src/pages/MuralPage.tsx(26,32): error TS2339: Property 'addNotice' does not exist on type 'AppContextType'.
+src/pages/MuralPage.tsx(26,43): error TS2339: Property 'updateNotice' does not exist on type 'AppContextType'.
+src/pages/MuralPage.tsx(26,57): error TS2339: Property 'deleteNotice' does not exist on type 'AppContextType'.
+src/pages/NotificationsPage.tsx(9,13): error TS2339: Property 'notifications' does not exist on type 'NotificationContextType'.
+src/pages/NotificationsPage.tsx(9,28): error TS2339: Property 'markAsRead' does not exist on type 'NotificationContextType'.
+src/pages/NotificationsPage.tsx(9,40): error TS2339: Property 'markAllAsRead' does not exist on type 'NotificationContextType'.
+src/pages/NotificationsPage.tsx(9,55): error TS2339: Property 'unreadCount' does not exist on type 'NotificationContextType'.
+src/pages/NotificationsPage.tsx(53,49): error TS7006: Parameter 'notif' implicitly has an 'any' type.
+src/pages/OcorrenciasPage.tsx(167,41): error TS7006: Parameter 'u' implicitly has an 'any' type.
+src/pages/OcorrenciasPage.tsx(170,78): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/pages/OcorrenciasPage.tsx(173,38): error TS7006: Parameter 'u' implicitly has an 'any' type.
+src/pages/Polls/PollCreate.tsx(21,13): error TS2339: Property 'sendNotification' does not exist on type 'NotificationContextType'.
+src/pages/ProfilesPage.tsx(120,13): error TS2353: Object literal may only specify known properties, and 'condominiumId' does not exist in type 'AccessProfile'.
+src/pages/ReadingsManagerPage.tsx(27,69): error TS2339: Property 'saveHistoryRecord' does not exist on type 'AppContextType'.
+src/pages/ReadingsManagerPage.tsx(50,13): error TS2339: Property 'sendNotification' does not exist on type 'NotificationContextType'.

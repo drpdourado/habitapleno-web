@@ -1,0 +1,11 @@
+﻿src/pages/DashboardPage.tsx(4,176): error TS6133: 'MessageCircle' is declared but its value is never read.
+src/pages/DashboardPage.tsx(12,1): error TS6133: 'generatePixPayload' is declared but its value is never read.
+src/pages/DashboardPage.tsx(13,1): error TS6133: 'QRCodeSVG' is declared but its value is never read.
+src/pages/DashboardPage.tsx(22,23): error TS6133: 'HabitaTextarea' is declared but its value is never read.
+src/pages/DashboardPage.tsx(29,82): error TS6133: 'UnitType' is declared but its value is never read.
+src/pages/DashboardPage.tsx(31,1): error TS6133: 'condoService' is declared but its value is never read.
+src/pages/DashboardPage.tsx(268,36): error TS6133: 'setSessionAcceptedNotices' is declared but its value is never read.
+src/pages/DashboardPage.tsx(324,9): error TS2304: Cannot find name 'setSelectedRecordForPix'.
+src/pages/DashboardPage.tsx(325,9): error TS2552: Cannot find name 'setSelectedUnitForPix'. Did you mean 'setSelectedUnitForPayment'?
+src/pages/DashboardPage.tsx(326,9): error TS2304: Cannot find name 'setIsPixModalOpen'.
+src/pages/DashboardPage.tsx(547,11): error TS6133: 'globalStats' is declared but its value is never read.
