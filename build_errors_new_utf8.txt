@@ -1,0 +1,39 @@
+﻿src/pages/HistoryDetailsPage.tsx(61,32): error TS18048: 'cloned.units' is possibly 'undefined'.
+src/pages/HistoryDetailsPage.tsx(92,24): error TS18048: 'prev.units' is possibly 'undefined'.
+src/pages/HistoryDetailsPage.tsx(123,33): error TS2488: Type 'Unit[] | undefined' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/pages/HistoryDetailsPage.tsx(132,26): error TS18048: 'record.unitTypes' is possibly 'undefined'.
+src/pages/HistoryDetailsPage.tsx(188,24): error TS18048: 'record.units' is possibly 'undefined'.
+src/pages/HistoryDetailsPage.tsx(236,22): error TS18048: 'record.unitTypes' is possibly 'undefined'.
+src/pages/HistoryDetailsPage.tsx(282,35): error TS18048: 'h.units' is possibly 'undefined'.
+src/pages/HistoryDetailsPage.tsx(328,112): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'string | number | Date'.
+      Type 'undefined' is not assignable to type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'string | number'.
+      Type 'undefined' is not assignable to type 'string | number'.
+src/pages/HistoryDetailsPage.tsx(408,40): error TS18048: 'r.units' is possibly 'undefined'.
+src/pages/HistoryDetailsPage.tsx(415,43): error TS18048: 'r.units' is possibly 'undefined'.
+src/pages/HistoryDetailsPage.tsx(422,55): error TS18048: 'r.units' is possibly 'undefined'.
+src/pages/HistoryDetailsPage.tsx(429,55): error TS18048: 'r.units' is possibly 'undefined'.
+src/pages/HistoryDetailsPage.tsx(429,123): error TS18048: 'r.units' is possibly 'undefined'.
+src/pages/HistoryDetailsPage.tsx(432,45): error TS18048: 'r.units' is possibly 'undefined'.
+src/pages/HistoryDetailsPage.tsx(466,30): error TS18048: 'r.units' is possibly 'undefined'.
+src/pages/HistoryDetailsPage.tsx(505,46): error TS18048: 'r.unitTypes' is possibly 'undefined'.
+src/pages/HistoryDetailsPage.tsx(560,80): error TS18048: 'prev.units' is possibly 'undefined'.
+src/pages/HistoryDetailsPage.tsx(649,68): error TS18048: 'prev.units' is possibly 'undefined'.
+src/pages/HistoryDetailsPage.tsx(791,90): error TS18048: 'record.unitTypes' is possibly 'undefined'.
+src/pages/HistoryDetailsPage.tsx(809,86): error TS18048: 'record.unitTypes' is possibly 'undefined'.
+src/pages/HistoryPage.tsx(118,39): error TS18048: 'record.units' is possibly 'undefined'.
+src/pages/HistoryPage.tsx(120,56): error TS18048: 'visibleUnits' is possibly 'undefined'.
+src/pages/HistoryPage.tsx(135,129): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/pages/HistoryPage.tsx(146,57): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/pages/HistoryPage.tsx(151,50): error TS18048: 'visibleUnits' is possibly 'undefined'.
+src/pages/MobileReading.tsx(139,51): error TS18048: 'prevRecord.units' is possibly 'undefined'.
+src/pages/OcorrenciasPage.tsx(85,17): error TS2322: Type 'string | undefined' is not assignable to type '"Baixa" | "Alta" | "M├®dia"'.
+  Type 'undefined' is not assignable to type '"Baixa" | "Alta" | "M├®dia"'.
+src/pages/OcorrenciasPage.tsx(309,58): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/pages/OcorrenciasPage.tsx(528,34): error TS18048: 'isDetailOpen.prioridade' is possibly 'undefined'.

@@ -337,7 +337,9 @@ const SettingsPage = () => {
                     const fixedFees = (type?.baseFee || 0);
                     const consumption = Math.max(0, unit.currentGasReading - unit.lastGasReading);
                     const gasValue = consumption * record.gasPrice;
-                    const totalValue = fixedFees + gasValue;
+                    // Usa calculatedTotal (valor calculado pela API, inclui extraFees) como fonte de verdade.
+                    // Fallback para fixedFees + gasValue apenas se o snapshot for antigo (sem calculatedTotal).
+                    const totalValue = unit.calculatedTotal || (fixedFees + gasValue);
                     csvContent += [record.referenceMonth, record.dueDate || '-', unit.id, unit.lastGasReading.toString().replace('.', ','), unit.currentGasReading.toString().replace('.', ','), consumption.toFixed(2).replace('.', ','), gasValue.toFixed(2).replace('.', ','), fixedFees.toFixed(2).replace('.', ','), totalValue.toFixed(2).replace('.', ','), unit.paymentDate || '-', (unit.amountPaid || 0).toFixed(2).replace('.', ','), unit.status || 'pendente'].join(separator) + '\n';
                 });
             });

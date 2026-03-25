@@ -89,17 +89,22 @@ export function ReadingsManagerPage() {
     // Summary Calculations
     const totalConsumption = useMemo(() => {
         let total = 0;
+        const activeRecord = history.find(h => h.id === existingRecordId || h.referenceMonth === selectedMonth);
         units.forEach(unit => {
             const current = readings[unit.id] || 0;
-            const prev = getPreviousReading(unit.id);
+            const prev = getPreviousReading(unit.id, activeRecord);
             total += Math.max(0, current - prev);
         });
         return total;
-    }, [readings, units, history, selectedMonth]);
+    }, [readings, units, history, selectedMonth, existingRecordId]);
 
-    function getPreviousReading(unitId: string): number {
+    function getPreviousReading(unitId: string, currentMonthRecord?: any): number {
         // Se já houver histórico carregado para o mês atual, essa função não é chamada na renderização básica,
         // mas é útil para novos períodos. Usamos o registro do servidor.
+        if (currentMonthRecord) {
+            const u = currentMonthRecord.units?.find((idx: any) => idx.id === unitId);
+            if (u && (u.lastGasReading || 0) > 0) return u.lastGasReading;
+        }
         return gasTrends.lastReadings[unitId] || 0;
     }
 
@@ -118,7 +123,7 @@ export function ReadingsManagerPage() {
             setIsUnlocked(false);
             setStatusMessage(periodStatus[selectedMonth] || 'REGISTRO SALVO');
             const loadedData: { [key: string]: number } = {};
-            record.units.forEach(u => loadedData[u.id] = u.currentGasReading);
+            record.units?.forEach(u => loadedData[u.id] = u.currentGasReading);
             setReadings(loadedData);
         } else {
             setIsExistingRecord(false);
@@ -158,7 +163,7 @@ export function ReadingsManagerPage() {
         const historyRecord = history.find(h => h.id === existingRecordId);
         const snapshotUnits = units.map(baseUnit => {
             const currentGasReading = readings[baseUnit.id] || 0;
-            const historyUnit = historyRecord?.units.find(u => u.id === baseUnit.id);
+            const historyUnit = historyRecord?.units?.find(u => u.id === baseUnit.id);
             const lastGasReading = (isExistingRecord && historyUnit && (historyUnit.lastGasReading || 0) > 0)
                 ? historyUnit.lastGasReading
                 : getPreviousReading(baseUnit.id);
@@ -337,17 +342,19 @@ export function ReadingsManagerPage() {
 
                 <div className="flex-1 overflow-hidden">
                     <HabitaTable
+                        responsive
                         headers={['Unidade', 'Status', 'Anterior', 'Leitura Final', 'Consumo (m³)', 'Valor']}
                         data={units.sort((a, b) => {
                             if ((a.block || '') !== (b.block || '')) return (a.block || '').localeCompare(b.block || '');
                             return a.id.localeCompare(b.id, undefined, { numeric: true });
                         }).map(unit => {
-                            const prev = getPreviousReading(unit.id);
+                            const activeRecord = history.find(h => h.id === existingRecordId || h.referenceMonth === selectedMonth);
+                            const prev = getPreviousReading(unit.id, activeRecord);
                             const current = readings[unit.id] ?? 0;
                             const consumption = Math.max(0, current - prev);
                             const avg = getAverageConsumption(unit.id);
                             const isHigh = avg !== null && consumption > (avg * 1.4) && consumption > 1;
-                            const gasPrice = (history.find(h => h.id === existingRecordId))?.gasPrice || settings.gasPrice;
+                            const gasPrice = activeRecord?.gasPrice || settings.gasPrice || 0;
 
                             return [
                                 <div className="flex items-center gap-3">
@@ -390,16 +397,16 @@ export function ReadingsManagerPage() {
                                     )}
                                 </div>,
                                 <div className="flex flex-col items-end">
-                                    <span className={consumption > 0 ? "font-medium text-slate-900" : "text-slate-300 font-medium"}>
+                                    <span className={consumption > 0 ? "font-black text-slate-800" : "text-slate-400 font-medium"}>
                                         {consumption.toFixed(3)}
                                     </span>
                                     {avg !== null && <span className="text-[8px] text-slate-500 font-medium uppercase tracking-wider">Média: {avg.toFixed(3)}</span>}
                                 </div>,
                                 <div className="flex flex-col items-end">
-                                    <span className={consumption > 0 ? "font-medium text-emerald-700" : "text-slate-300 font-medium"}>
+                                    <span className={consumption > 0 ? "font-black text-emerald-700" : "text-slate-400 font-medium"}>
                                         {(consumption * gasPrice).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                     </span>
-                                    <span className="text-[8px] text-slate-500 font-medium uppercase tracking-wider">R$ {gasPrice.toFixed(2)}/m³</span>
+                                    <span className="text-[8px] text-slate-500 font-medium uppercase tracking-wider">R$ {(gasPrice || 0).toFixed(2)}/m³</span>
                                 </div>
                             ];
                         })}

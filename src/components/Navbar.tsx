@@ -5,7 +5,7 @@ import {
   ChevronDown, AlertCircle, Wrench, BarChart2, MapPin, Calendar as CalendarIcon, ScanFace, Building2, Crown, Layers, LayoutDashboard, Landmark
 } from 'lucide-react';
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import api from '../services/api';
 import { hasPermission } from '../utils/rbac';
@@ -23,7 +23,9 @@ import { useAuth } from '../contexts/AuthContext';
 
 const Navbar = () => {
   const { settings, tenantId, switchTenant } = useApp();
-  const { user, isAdmin, isSuperAdmin, profile, accessProfile, triggerCondoSelection } = useAuth();
+  const { user, isAdmin, isSuperAdmin, profile, accessProfile, triggerCondoSelection, signOut } = useAuth();
+
+  const navigate = useNavigate();
 
   
   // Plan fallback
@@ -213,11 +215,9 @@ const Navbar = () => {
     try {
       await api.post('/auth/logout');
     } catch (e) {}
-    localStorage.removeItem('@HabitaPleno:token');
-    localStorage.removeItem('@HabitaPleno:activeCondoId');
-    localStorage.removeItem('@HabitaPleno:user');
-    window.location.href = '/login';
+    signOut();
     setIsLogoutModalOpen(false);
+    navigate('/login');
   };
 
   const userFormatted = {

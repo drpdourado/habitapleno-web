@@ -1,0 +1,115 @@
+﻿
+> gestao-condominio@0.0.0 dev
+> tsx watch src/index.ts
+
+Ô£à Chave do Firebase lida com SUCESSO via arquivo local!
+­ƒÜÇ Servidor HabitaPleno rodando na porta 3000
+­ƒöù Local: http://localhost:3000
+09:14:25 [tsx] change in ./src\routes\index.ts Restarting...
+cÔ£à Chave do Firebase lida com SUCESSO via arquivo local!
+­ƒÜÇ Servidor HabitaPleno rodando na porta 3000
+­ƒöù Local: http://localhost:3000
+09:14:52 [tsx] change in ./src\controllers\financialController.ts Restarting...
+cÔ£à Chave do Firebase lida com SUCESSO via arquivo local!
+­ƒÜÇ Servidor HabitaPleno rodando na porta 3000
+­ƒöù Local: http://localhost:3000
+09:14:59 [tsx] change in ./src\routes\index.ts Restarting...
+cÔ£à Chave do Firebase lida com SUCESSO via arquivo local!
+­ƒÜÇ Servidor HabitaPleno rodando na porta 3000
+­ƒöù Local: http://localhost:3000
+[generatePDF] Solicitado para unitId: "402", ref: 03/2026, condoId: vista-verde-01
+node.exe : [generatePDF] Unidade "402" n├úo encontrada no 
+condom├¡nio vista-verde-01
+No C:\Program Files\nodejs\npm.ps1:29 caractere:3
++   & $NODE_EXE $NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([generatePDF] U... vi 
+   sta-verde-01:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[generatePDF] Solicitado para unitId: "402", ref: 03/2026, condoId: vista-verde-01
+[generatePDF] Unidade "402" n├úo encontrada no condom├¡nio 
+vista-verde-01
+09:18:36 [tsx] change in ./src\routes\index.ts Restarting...
+cÔ£à Chave do Firebase lida com SUCESSO via arquivo local!
+­ƒÜÇ Servidor HabitaPleno rodando na porta 3000
+­ƒöù Local: http://localhost:3000
+09:19:48 [tsx] change in ./src\controllers\financialController.ts Restarting...
+cÔ£à Chave do Firebase lida com SUCESSO via arquivo local!
+­ƒÜÇ Servidor HabitaPleno rodando na porta 3000
+­ƒöù Local: http://localhost:3000
+[generatePDF] Solicitado para unitId: "402", ref: 03/2026, condoId: "vista-verde-01"
+[generatePDF] Doc ID "402" n├úo encontrado. Buscando por campos 'number' ou 'unitId'...
+[generatePDF] Unidade "402" n├úo existe em nenhuma cole├º├úo.
+[generatePDF] Solicitado para unitId: "402", ref: 03/2026, condoId: "vista-verde-01"
+[generatePDF] Doc ID "402" n├úo encontrado. Buscando por campos 'number' ou 'unitId'...
+[generatePDF] Unidade "402" n├úo existe em nenhuma cole├º├úo.
+09:22:51 [tsx] change in ./src\controllers\financialController.ts Restarting...
+cÔ£à Chave do Firebase lida com SUCESSO via arquivo local!
+­ƒÜÇ Servidor HabitaPleno rodando na porta 3000
+­ƒöù Local: http://localhost:3000
+[generatePDF] === IN├ìCIO BUSCA UNIDADE ===
+[generatePDF] rawUnitId: "402", unitId: "402"
+[generatePDF] referenceMonth: "03/2026", type: "fatura"
+[generatePDF] condoId do Header: "vista-verde-01"
+[generatePDF] Busca direta units/402 existe? false
+[generatePDF] Iniciando busca massiva no condom├¡nio: "vista-verde-01"
+[generatePDF] Encontrei 8 unidades para este condom├¡nio.
+ -> Verificando Doc vista-verde-01_101: matchId=false, matchNum=false, matchUId=false
+ -> Verificando Doc vista-verde-01_102: matchId=false, matchNum=false, matchUId=false
+ -> Verificando Doc vista-verde-01_201: matchId=false, matchNum=false, matchUId=false
+ -> Verificando Doc vista-verde-01_202: matchId=false, matchNum=false, matchUId=false
+ -> Verificando Doc vista-verde-01_301: matchId=false, matchNum=false, matchUId=false
+ -> Verificando Doc vista-verde-01_302: matchId=false, matchNum=false, matchUId=false
+ -> Verificando Doc vista-verde-01_401: matchId=false, matchNum=false, matchUId=false
+ -> Verificando Doc vista-verde-01_402: matchId=false, matchNum=false, matchUId=false
+[generatePDF] !!! DESESPERO: Buscando unitId "402" em TODA a cole├º├úo units !!!
+[generatePDF] !!! NEM NO DESESPERO ACHOU !!!
+[generatePDF] Unidade "402" N├âO ENCONTRADA. Retornando 404.
+[generatePDF] === IN├ìCIO BUSCA UNIDADE ===
+[generatePDF] rawUnitId: "402", unitId: "402"
+[generatePDF] referenceMonth: "03/2026", type: "fatura"
+[generatePDF] condoId do Header: "vista-verde-01"
+[generatePDF] Busca direta units/402 existe? false
+[generatePDF] Iniciando busca massiva no condom├¡nio: "vista-verde-01"
+[generatePDF] Encontrei 8 unidades para este condom├¡nio.
+ -> Verificando Doc vista-verde-01_101: matchId=false, matchNum=false, matchUId=false
+ -> Verificando Doc vista-verde-01_102: matchId=false, matchNum=false, matchUId=false
+ -> Verificando Doc vista-verde-01_201: matchId=false, matchNum=false, matchUId=false
+ -> Verificando Doc vista-verde-01_202: matchId=false, matchNum=false, matchUId=false
+ -> Verificando Doc vista-verde-01_301: matchId=false, matchNum=false, matchUId=false
+ -> Verificando Doc vista-verde-01_302: matchId=false, matchNum=false, matchUId=false
+ -> Verificando Doc vista-verde-01_401: matchId=false, matchNum=false, matchUId=false
+ -> Verificando Doc vista-verde-01_402: matchId=false, matchNum=false, matchUId=false
+[generatePDF] !!! DESESPERO: Buscando unitId "402" em TODA a cole├º├úo units !!!
+[generatePDF] !!! NEM NO DESESPERO ACHOU !!!
+[generatePDF] Unidade "402" N├âO ENCONTRADA. Retornando 404.
+09:27:10 [tsx] change in ./src\controllers\financialController.ts Restarting...
+cÔ£à Chave do Firebase lida com SUCESSO via arquivo local!
+­ƒÜÇ Servidor HabitaPleno rodando na porta 3000
+­ƒöù Local: http://localhost:3000
+[generatePDF] === IN├ìCIO BUSCA UNIDADE ===
+[generatePDF] rawUnitId: "402", unitId: "402"
+[generatePDF] referenceMonth: "03/2026", type: "fatura"
+[generatePDF] condoId do Header: "vista-verde-01"
+[generatePDF] Busca direta units/402 existe? false
+[generatePDF] Iniciando busca massiva no condom├¡nio: "vista-verde-01"
+[generatePDF] Encontrei 8 unidades para este condom├¡nio.
+ -> Doc vista-verde-01_101: matchId=false, matchNum=false, matchUId=false
+    Data: {"typeId":"ee5a425c-1986-498c-adf7-c264571192aa","status":"pendente","condominiumId":"vista-verde-01","paymentDate":"","id":"101","ownerName":"Paulo C├®sar Lima de Oliveira","currentGasReading":2682.133,"block":"","amountPaid":0,"lastGasReading":2682.133}
+ -> Doc vista-verde-01_102: matchId=false, matchNum=false, matchUId=false
+    Data: {"paymentDate":"","id":"102","currentGasReading":3322.757,"ownerName":"Nadja Bulc├úo Mota","condominiumId":"vista-verde-01","status":"pendente","typeId":"ee5a425c-1986-498c-adf7-c264571192aa","lastGasReading":3322.757,"amountPaid":0,"block":""}
+ -> Doc vista-verde-01_201: matchId=false, matchNum=false, matchUId=false
+    Data: {"lastGasReading":2555.498,"amountPaid":0,"block":"","ownerName":"Zenaide Carib├® de Ara├║jo Pinho","id":"201","currentGasReading":2555.498,"paymentDate":"","typeId":"ee5a425c-1986-498c-adf7-c264571192aa","condominiumId":"vista-verde-01","status":"pendente"}
+ -> Doc vista-verde-01_202: matchId=false, matchNum=false, matchUId=false
+    Data: {"paymentDate":"","currentGasReading":2497.519,"id":"202","ownerName":"Ana Carolina Duarte Levy","condominiumId":"vista-verde-01","status":"pendente","typeId":"ee5a425c-1986-498c-adf7-c264571192aa","lastGasReading":2497.519,"amountPaid":0,"block":""}
+ -> Doc vista-verde-01_301: matchId=false, matchNum=false, matchUId=false
+    Data: {"ownerName":"Ant├┤nio Carlos Mattos da Silva ","id":"301","currentGasReading":2746.455,"paymentDate":"","condominiumId":"vista-verde-01","status":"pendente","typeId":"ee5a425c-1986-498c-adf7-c264571192aa","lastGasReading":2746.455,"amountPaid":0,"block":""}
+ -> Doc vista-verde-01_302: matchId=false, matchNum=false, matchUId=false
+    Data: {"block":"","amountPaid":0,"lastGasReading":500.919,"condominiumId":"vista-verde-01","status":"pendente","typeId":"ee5a425c-1986-498c-adf7-c264571192aa","paymentDate":"","id":"302","currentGasReading":500.919,"ownerName":"Jos├® C├óndido de Carvalho Sobrinho"}
+ -> Doc vista-verde-01_401: matchId=false, matchNum=false, matchUId=false
+    Data: {"block":"","amountPaid":0,"lastGasReading":2663.452,"condominiumId":"vista-verde-01","status":"pendente","typeId":"77fbb0ae-9678-4d85-ac19-dc771ccf659d","id":"401","currentGasReading":2663.452,"ownerName":"Nilda Maria Dantas ","paymentDate":""}
+ -> Doc vista-verde-01_402: matchId=true, matchNum=true, matchUId=false
+    Data: {"vehicles":[{"color":"Vermelho","model":"Etios","plate":"PLN4H83"},{"plate":"SJP5F79","model":"Fastback","color":"Cinza Escuro"}],"id":"402","currentGasReading":4060.789,"ownerName":"David Ribeiro Passos Dourado","paymentDate":"","dependentes":[{"tipo":"Filho(a)","observacoes":"Crian├ºa","nome":"Francisco Macedo Queiroz Passos Dourado"},{"nome":"Marcia Carla de Lima","tipo":"Funcion├írio Privado","observacoes":""}],"condominiumId":"vista-verde-01","status":"pendente","typeId":"77fbb0ae-9678-4d85-ac19-dc771ccf659d","lastGasReading":4060.789,"amountPaid":0,"block":""}
+[generatePDF] Unidade encontrada no loop! ID Real: vista-verde-01_402
+

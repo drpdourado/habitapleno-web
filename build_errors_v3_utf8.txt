@@ -1,0 +1,2 @@
+﻿src/pages/HistoryDetailsPage.tsx(649,68): error TS18048: 'prev.units' is possibly 'undefined'.
+src/pages/HistoryDetailsPage.tsx(809,86): error TS18048: 'record.unitTypes' is possibly 'undefined'.

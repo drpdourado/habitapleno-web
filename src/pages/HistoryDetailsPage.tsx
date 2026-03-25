@@ -6,7 +6,7 @@ import { Save, ArrowLeft, Trash2, MessageCircle, Pencil, X, Check, FileSpreadshe
 import { generatePixPayload } from '../utils/PixUtils.ts';
 import { QRCodeSVG } from 'qrcode.react';
 import { generateReceiptPDF } from '../utils/ReceiptGenerator.ts';
-import { generateMonthlyReport } from '../utils/PDFReportUtils.ts';
+import { generateGasReport } from '../utils/PDFReportUtils.ts';
 import { hasPermission } from '../utils/rbac.ts';
 import { useToast } from '../contexts/ToastContext.ts';
 import { clsx, type ClassValue } from 'clsx';
@@ -57,7 +57,7 @@ const HistoryDetailsPage = () => {
         const found = history.find(h => h.id === id);
         if (found) {
             const cloned = JSON.parse(JSON.stringify(found)) as HistoryRecord;
-            if (!hasPermission(accessProfile, 'history', 'all')) {
+            if (cloned.units && !hasPermission(accessProfile, 'history', 'all')) {
                 cloned.units = cloned.units.filter(u => u.id === profile?.unitId);
             }
             return cloned;
@@ -89,7 +89,7 @@ const HistoryDetailsPage = () => {
             if (!prev) return null;
             return {
                 ...prev,
-                units: prev.units.map(u => u.id === unitId ? { ...u, currentGasReading: val } : u)
+                units: (prev.units || []).map(u => u.id === unitId ? { ...u, currentGasReading: val } : u)
             };
         });
     };
@@ -120,7 +120,7 @@ const HistoryDetailsPage = () => {
         const headers = ['Apartamento', 'Bloco', 'Medição Atual', 'Medição Anterior', 'Consumo', 'Valor do Gás', 'Taxa Condominial', 'Total', 'Nome do Morador'];
         csvContent += headers.join(separator) + '\n';
 
-        const sortedUnits = [...record.units].sort((a, b) => {
+        const sortedUnits = [...(record.units || [])].sort((a, b) => {
             const blockA = a.block || '';
             const blockB = b.block || '';
             if (blockA !== blockB) return blockA.localeCompare(blockB);
@@ -129,7 +129,7 @@ const HistoryDetailsPage = () => {
 
         sortedUnits.forEach(unit => {
             const { consumption, value } = calculateValues(unit);
-            const type = record.unitTypes.find(t => t.id === unit.typeId);
+            const type = (record.unitTypes || []).find(t => t.id === unit.typeId);
             const fixedFee = (type?.baseFee || 0);
 
             // Calcular taxas extras do snapshot
@@ -185,7 +185,7 @@ const HistoryDetailsPage = () => {
         if (record && unitToDelete) {
             const updatedRecord = {
                 ...record,
-                units: record.units.filter(u => u.id !== unitToDelete)
+                units: (record.units || []).filter(u => u.id !== unitToDelete)
             };
             setRecord(updatedRecord);
             updateHistoryRecord(updatedRecord.id, updatedRecord);
@@ -233,7 +233,7 @@ const HistoryDetailsPage = () => {
     const generateWhatsAppText = (unit: Unit) => {
         if (!record) return;
         const { value } = calculateValues(unit);
-        const type = record.unitTypes.find(t => t.id === unit.typeId);
+        const type = (record.unitTypes || []).find(t => t.id === unit.typeId);
         const quota = (type?.baseFee || 0);
         
         // Listar taxas extras detalhadas
@@ -279,7 +279,7 @@ Total................... ${formatCurrency(total).replace('R$', 'R$ ')}`;
         const today = new Date();
         const hasPendingPrevious = history.some(h => {
             if (h.id === record.id) return false;
-            const unitInHistory = h.units.find(u => u.id === unit.id);
+            const unitInHistory = (h.units || []).find(u => u.id === unit.id);
             if (!unitInHistory) return false;
 
             if (unitInHistory.status !== 'pago') {
@@ -325,7 +325,7 @@ Total................... ${formatCurrency(total).replace('R$', 'R$ ')}`;
                                 </HabitaHeading>
                                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2">
                                     <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5">
-                                        <Calendar size={12} className="text-slate-300" /> Aberto em: {new Date(r.closedAt).toLocaleDateString()}
+                                        <Calendar size={12} className="text-slate-300" /> Aberto em: {r.closedAt ? new Date(r.closedAt).toLocaleDateString() : '—'}
                                     </p>
                                     <div className="h-3 w-[1px] bg-slate-200 hidden md:block" />
                                     <div className="flex items-center gap-2">
@@ -369,12 +369,12 @@ Total................... ${formatCurrency(total).replace('R$', 'R$ ')}`;
                         <div className="flex flex-wrap items-center gap-3">
                             {isAdmin && (
                                 <HabitaButton
-                                    onClick={() => generateMonthlyReport(r, settings)}
+                                    onClick={() => generateGasReport(r.referenceMonth)}
                                     variant="outline"
                                     className="bg-white border-slate-200"
                                     icon={<Download size={18} />}
                                 >
-                                    Relatório Mensal
+                                    Relatório de Consumo
                                 </HabitaButton>
                             )}
                             <HabitaButton
@@ -405,31 +405,31 @@ Total................... ${formatCurrency(total).replace('R$', 'R$ ')}`;
                         metrics={[
                             {
                                 label: "UNIDADES",
-                                value: r.units.length,
+                                value: (r.units || []).length,
                                 icon: <Building />,
                                 variant: "slate",
                                 subtext: "Participantes"
                             },
                             {
                                 label: "CONSUMO TOTAL",
-                                value: `${r.units.reduce((sum, u) => sum + calculateValues(u).consumption, 0).toFixed(2)} m³`,
+                                value: `${(r.units || []).reduce((sum, u) => sum + calculateValues(u).consumption, 0).toFixed(2)} m³`,
                                 icon: <RefreshCw />,
                                 variant: "indigo",
                                 subtext: "Gás Medido"
                             },
                             {
                                 label: "FATURAMENTO",
-                                value: formatCurrency(r.units.reduce((sum, u) => sum + (u.calculatedTotal || 0), 0)),
+                                value: formatCurrency((r.units || []).reduce((sum, u) => sum + (u.calculatedTotal || 0), 0)),
                                 icon: <DollarSign />,
                                 variant: "emerald",
                                 subtext: "Valor Global"
                             },
                             {
                                 label: "LIQUIDEZ",
-                                value: `${Math.round((r.units.filter(u => u.status === 'pago' || u.paymentDate).length / (r.units.length || 1)) * 100)}%`,
+                                value: `${Math.round(((r.units || []).filter(u => u.status === 'pago' || u.paymentDate).length / ((r.units || []).length || 1)) * 100)}%`,
                                 icon: <Check />,
                                 variant: "indigo",
-                                subtext: `${r.units.filter(u => u.status === 'pago' || u.paymentDate).length} Pagos`
+                                subtext: `${(r.units || []).filter(u => u.status === 'pago' || u.paymentDate).length} Pagos`
                             }
                         ]}
                         cols={4}
@@ -463,7 +463,7 @@ Total................... ${formatCurrency(total).replace('R$', 'R$ ')}`;
 
                     <div className="flex flex-wrap items-center gap-3">
                         <HabitaBadge variant="neutral" className="h-10 px-4 bg-white border-slate-200 text-slate-500 text-[10px] font-black">
-                            {r.units.length} REGISTROS
+                            {(r.units || []).length} REGISTROS
                         </HabitaBadge>
                     </div>
                 </div>
@@ -489,7 +489,7 @@ Total................... ${formatCurrency(total).replace('R$', 'R$ ')}`;
                             </HabitaTR>
                         </HabitaTHead>
                         <HabitaTBody>
-                            {([...r.units].filter(unit => {
+                            {([...(r.units || [])].filter(unit => {
                                 if (!searchTerm) return true;
                                 const s = searchTerm.toLowerCase();
                                 return unit.id.toLowerCase().includes(s) || 
@@ -502,7 +502,7 @@ Total................... ${formatCurrency(total).replace('R$', 'R$ ')}`;
                                 return a.id.localeCompare(b.id, undefined, { numeric: true });
                             })).map((unit) => {
                                 const { consumption, value } = calculateValues(unit);
-                                const type = r.unitTypes.find(t => t.id === unit.typeId);
+                                const type = (r.unitTypes || []).find(t => t.id === unit.typeId);
                                 const fixedFee = (type?.baseFee || 0);
                                 const extraFeesTotal = (r.extraFees || []).reduce((sum, fee) => {
                                     const fv = fee.values.find(v => v.unitTypeId === unit.typeId)?.value || 0;
@@ -557,7 +557,7 @@ Total................... ${formatCurrency(total).replace('R$', 'R$ ')}`;
                                                                     if (!prev) return null;
                                                                     return {
                                                                         ...prev,
-                                                                        units: prev.units.map(u => u.id === unit.id ? {
+                                                                        units: (prev.units || []).map(u => u.id === unit.id ? {
                                                                             ...u,
                                                                             paymentDate: dateStr,
                                                                             status: 'pago',
@@ -646,7 +646,7 @@ Total................... ${formatCurrency(total).replace('R$', 'R$ ')}`;
                                                         if (!prev) return null;
                                                         return {
                                                             ...prev,
-                                                            units: prev.units.map(u => u.id === unit.id ? {
+                                                            units: (prev.units || []).map(u => u.id === unit.id ? {
                                                                 ...u,
                                                                 paymentDate: dateStr,
                                                                 status: 'pago',
@@ -788,10 +788,7 @@ Total................... ${formatCurrency(total).replace('R$', 'R$ ')}`;
                                         readOnly
                                         value={generatePixPayload(
                                             settings.pixKey || '',
-                                            calculateValues(selectedUnitForPix).value + (record.unitTypes.find(t => t.id === selectedUnitForPix.typeId)?.baseFee || 0) + (record.extraFees || []).reduce((sum, fee) => {
-                                                const fv = fee.values.find(v => v.unitTypeId === selectedUnitForPix.typeId)?.value || 0;
-                                                return sum + fv;
-                                            }, 0),
+                                            selectedUnitForPix.calculatedTotal || 0,
                                             settings.pixBeneficiary || 'Condominio',
                                             'Brasil',
                                             `Cond ${record.referenceMonth} Unid ${selectedUnitForPix.id}`
@@ -806,10 +803,7 @@ Total................... ${formatCurrency(total).replace('R$', 'R$ ')}`;
                                     if (!record || !selectedUnitForPix) return;
                                     const payload = generatePixPayload(
                                         settings.pixKey || '',
-                                        calculateValues(selectedUnitForPix).value + (record.unitTypes.find(t => t.id === selectedUnitForPix.typeId)?.baseFee || 0) + (record.extraFees || []).reduce((sum, fee) => {
-                                            const fv = fee.values.find(v => v.unitTypeId === selectedUnitForPix.typeId)?.value || 0;
-                                            return sum + fv;
-                                        }, 0),
+                                        selectedUnitForPix.calculatedTotal || 0,
                                         settings.pixBeneficiary || 'Condominio',
                                         'Brasil',
                                         `Cond ${record.referenceMonth} Unid ${selectedUnitForPix.id}`

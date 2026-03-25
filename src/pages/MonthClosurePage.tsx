@@ -45,15 +45,11 @@ export const MonthClosurePage: React.FC = () => {
     const [realBankBalance, setRealBankBalance] = useState<number | ''>('');
     const [realCashBalance, setRealCashBalance] = useState<number | ''>('');
     const [apiStats, setApiStats] = useState<any>(null);
-    const [isLoadingStats, setIsLoadingStats] = useState(false);
+
 
     const selectedDate = useMemo(() => new Date(selectedMonth + '-02'), [selectedMonth]);
 
     const {
-        history,
-        expenses,
-        revenues,
-        virtualRevenues,
         closures,
         balances,
         addMonthClosure,
@@ -77,23 +73,7 @@ export const MonthClosurePage: React.FC = () => {
 
     const isClosed = adminService.isMonthClosed(closureId, closures);
 
-    const periodStats = useMemo(() => {
-        const month = selectedDate.getMonth();
-        const year = selectedDate.getFullYear();
 
-        const result = adminService.calculateProjectedBalance(
-            month, year, expenses, revenues, virtualRevenues, closures, history
-        );
-
-        return {
-            hasGas: result.hasGasSnapshot,
-            incomes: result.totalIncomes,
-            expenses: result.totalExpenses,
-            balance: result.monthBalance,
-            initialBalance: result.initialBalance,
-            projectedBalance: result.projectedBalance
-        };
-    }, [selectedDate, history, revenues, expenses, virtualRevenues, closures]);
 
     useEffect(() => {
         if (isClosed) {
@@ -110,7 +90,7 @@ export const MonthClosurePage: React.FC = () => {
 
     useEffect(() => {
         const fetchStats = async () => {
-            setIsLoadingStats(true);
+
             try {
                 const [y, m] = selectedMonth.split('-');
                 const res = await api.get(`/financial?month=${m}&year=${y}`);
@@ -119,8 +99,6 @@ export const MonthClosurePage: React.FC = () => {
                 }
             } catch (e) {
                 console.error('Error fetching financial summary:', e);
-            } finally {
-                setIsLoadingStats(false);
             }
         };
         fetchStats();
@@ -157,19 +135,26 @@ export const MonthClosurePage: React.FC = () => {
             }
         }
         
-        if (apiStats && !isLoadingStats) {
+        if (apiStats) {
             return {
-                hasGas: apiStats.historyCount > 0,
-                incomes: apiStats.totalRevenues,
-                expenses: apiStats.totalExpenses,
-                balance: apiStats.monthBalance,
-                initialBalance: apiStats.initialBalance,
-                projectedBalance: apiStats.projectedBalance
+                hasGas: (apiStats.historyCount || 0) > 0,
+                incomes: apiStats.totalRevenues || 0,
+                expenses: apiStats.totalExpenses || 0,
+                balance: apiStats.monthBalance || 0,
+                initialBalance: apiStats.initialBalance || 0,
+                projectedBalance: apiStats.projectedBalance || 0
             };
         }
 
-        return periodStats;
-    }, [isClosed, closures, closureId, refMonth, periodStats, apiStats, isLoadingStats]);
+        return {
+            hasGas: false,
+            incomes: 0,
+            expenses: 0,
+            balance: 0,
+            initialBalance: 0,
+            projectedBalance: 0
+        };
+    }, [isClosed, closures, closureId, apiStats, refMonth]);
 
     const difference = useMemo(() => {
         const bank = typeof realBankBalance === 'number' ? realBankBalance : 0;
@@ -180,20 +165,18 @@ export const MonthClosurePage: React.FC = () => {
     const handleConcludeClosure = async () => {
         setIsGenerating(true);
         try {
-            const balanceResult = adminService.calculateProjectedBalance(
-                selectedDate.getMonth(),
-                selectedDate.getFullYear(),
-                expenses, revenues, virtualRevenues, closures, history
-            );
-
             const result = await adminService.createMonthSnapshot(
                 {
                     referenceMonth: refMonth,
                     closedBy: profile?.name || 'Administrador',
                     realBankBalance: typeof realBankBalance === 'number' ? realBankBalance : 0,
-                    realCashBalance: typeof realCashBalance === 'number' ? realCashBalance : 0
-                },
-                balanceResult
+                    realCashBalance: typeof realCashBalance === 'number' ? realCashBalance : 0,
+                    // Enviamos o que recebemos da API para registro, o backend recalculará para validação
+                    initialBalance: apiStats?.initialBalance || 0,
+                    totalIncomes: apiStats?.totalRevenues || 0,
+                    totalExpenses: apiStats?.totalExpenses || 0,
+                    projectedBalance: apiStats?.projectedBalance || 0
+                }
             );
 
             if (result.success && result.data) {

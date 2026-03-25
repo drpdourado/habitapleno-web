@@ -3,6 +3,7 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     Line, LineChart, PieChart, Pie, Cell
 } from 'recharts';
+import api from '../services/api';
 import {
     FileDown, TrendingUp, TrendingDown,
     DollarSign, Zap, AlertTriangle,
@@ -11,8 +12,8 @@ import {
     AlertCircle, CheckCircle2, Clock, Tag,
     Filter, Wrench, Scale, Lock,
 } from 'lucide-react';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+// jsPDF and autoTable removed - PDF generation migrated to Backend API
+
 
 // UnitSnapshot remains local as it might have specific needs for history snapshots
 export interface UnitSnapshot {
@@ -26,11 +27,30 @@ export interface UnitSnapshot {
     paymentDate?: string;
 }
 
-export interface MonthClosure { id: string; referenceMonth: string; closedAt?: string; }
+interface ConsumoAuditItem {
+    id: string;
+    consumption: number;
+    prevConsumption: number;
+    variation: number;
+    isAlert: boolean;
+}
 
+interface InadimplenciaRankItem {
+    unit: string;
+    owner: string;
+    totalAmount: number;
+    months: number;
+    status?: string;
+}
+
+interface FinancialCategoryItem {
+    name: string;
+    amount: number;
+    percent: number;
+}
 
 // Utils
-import { generateFinancialReport, generateGasReport, generateDelinquencyReport } from '../utils/PDFReportUtils';
+import { generateFinancialReport, generateGasReport, generateDelinquencyReport, generateOcorrenciasReport } from '../utils/PDFReportUtils';
 
 // Habita Design System
 import { HabitaCard, HabitaCardHeader, HabitaCardTitle } from '../components/ui/HabitaCard';
@@ -49,7 +69,7 @@ import { HabitaSpinner } from '../components/ui/HabitaSpinner';
 
 import { HabitaCombobox } from '../components/ui/HabitaCombobox';
 import { useApp } from '../contexts';
-import type { Ocorrencia, HistoryRecord, Expense, Revenue, Category } from '../contexts';
+import type { Ocorrencia, HistoryRecord } from '../contexts';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -61,10 +81,7 @@ export const ReportsPage = () => {
         history: contextHistory,
         closures: contextClosures,
         revenues: contextRevenues,
-        expenses: contextExpenses,
         categories: contextCategories,
-        visibleOcorrencias: contextOcorrencias,
-        bankAccounts,
         balances
     } = useApp();
 
@@ -80,11 +97,50 @@ export const ReportsPage = () => {
 
     // Filtered Local State for display
     const [historyData, setHistoryData] = useState<HistoryRecord[]>([]);
-    const [closuresData, setClosuresData] = useState<MonthClosure[]>([]);
-    const [ocorrenciasData, setOcorrenciasData] = useState<Ocorrencia[]>([]);
-    const [expensesData, setExpensesData] = useState<Expense[]>([]);
-    const [revenuesData, setRevenuesData] = useState<Revenue[]>([]);
-    const [categoriesData, setCategoriesData] = useState<Category[]>([]);
+
+    const [inadimplenciaStats, setInadimplenciaStats] = useState<{
+        chartData: any[];
+        ranking: any[];
+        kpis: {
+            totalDebt: number;
+            uniqueUnits: number;
+            rate: number;
+        }
+    }>({
+        chartData: [],
+        ranking: [],
+        kpis: {
+            totalDebt: 0,
+            uniqueUnits: 0,
+            rate: 0
+        }
+    });
+
+    const [fluxoDeCaixaStats, setFluxoDeCaixaStats] = useState<{
+        stackedChartData: any[];
+        pieData: any[];
+        dreList: any[];
+        incomeCategories: any[];
+        expenseCategories: any[];
+        kpis: {
+            totalIn: number;
+            totalOut: number;
+            balance: number;
+        }
+    }>({
+        stackedChartData: [],
+        pieData: [],
+        dreList: [],
+        incomeCategories: [],
+        expenseCategories: [],
+        kpis: {
+            totalIn: 0,
+            totalOut: 0,
+            balance: 0
+        }
+    });
+
+    const [apiStats, setApiStats] = useState<any>(null);
 
     // Initial setup and dynamic years fetching from context
     useEffect(() => {
@@ -107,41 +163,19 @@ export const ReportsPage = () => {
         if (!startDate || !endDate) return;
         setIsFetching(true);
 
-        const [startYear, startMonth] = startDate.split('-');
-        const [endYear, endMonth] = endDate.split('-');
-
         try {
             // Wait a tiny bit for UX feel
             await new Promise(r => setTimeout(r, 400));
 
-            // Numeric comparison keys (YYYYMM)
-            const rangeStart = parseInt(startYear) * 100 + parseInt(startMonth);
-            const rangeEnd = parseInt(endYear) * 100 + parseInt(endMonth);
+            // Backend Unified Fetch: Stats
+            const res = await api.get(`/financial/reports/stats?startDate=${startDate}&endDate=${endDate}&selectedCategoryId=${selectedCategoryId}`);
 
-            const getCompValue = (ref: string) => {
-                if (!ref || !ref.includes('/')) return 0;
-                const [m, y] = ref.split('/');
-                return parseInt(y) * 100 + parseInt(m);
-            };
-
-            const getDateCompValue = (dateStr: string) => {
-                if (!dateStr) return 0;
-                const d = new Date(dateStr + (dateStr.length === 10 ? 'T00:00:00' : ''));
-                return d.getFullYear() * 100 + (d.getMonth() + 1);
-            };
-
-            const histFiltered = (contextHistory || []).filter((d: any) => d.referenceMonth && getCompValue(d.referenceMonth) >= rangeStart && getCompValue(d.referenceMonth) <= rangeEnd);
-            const closFiltered = (contextClosures || []).filter((d: any) => d.referenceMonth && getCompValue(d.referenceMonth) >= rangeStart && getCompValue(d.referenceMonth) <= rangeEnd);
-            const ocoFiltered = (contextOcorrencias || []).filter((d: any) => d.dataAbertura && getDateCompValue(d.dataAbertura) >= rangeStart && getDateCompValue(d.dataAbertura) <= rangeEnd);
-            const expFiltered = (contextExpenses || []).filter((d: any) => d.date && getDateCompValue(d.date) >= rangeStart && getDateCompValue(d.date) <= rangeEnd);
-            const revFiltered = (contextRevenues || []).filter((d: any) => d.date && getDateCompValue(d.date) >= rangeStart && getDateCompValue(d.date) <= rangeEnd);
-
-            setHistoryData(histFiltered);
-            setClosuresData(closFiltered);
-            setOcorrenciasData(ocoFiltered);
-            setExpensesData(expFiltered);
-            setRevenuesData(revFiltered);
-            setCategoriesData(contextCategories || []);
+            if (res.data.success) {
+                setInadimplenciaStats(res.data.data.delinquency);
+                setFluxoDeCaixaStats(res.data.data.financial);
+                setHistoryData(res.data.data.rawHistory || []);
+                setApiStats(res.data.data);
+            }
 
         } catch (error) {
             console.error("Error filtering report data:", error);
@@ -149,6 +183,11 @@ export const ReportsPage = () => {
             setIsFetching(false);
         }
     };
+
+    // Re-fetch when specific filters change
+    useEffect(() => {
+        fetchReports();
+    }, [startDate, endDate, selectedCategoryId]);
 
     // Only run initial fetch once context data is available and dates are set
     useEffect(() => {
@@ -161,389 +200,57 @@ export const ReportsPage = () => {
 
 
     // ==========================================
-    // DATA PREP: 1. Financeiro (Inadimplência)
-    // ==========================================
-    const inadimplenciaStats = useMemo(() => {
-        const result: { name: string; total: number; amount: number; reportDetails: any[] }[] = [];
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const parseDate = (dStr: string) => {
-            if (!dStr) return new Date();
-            if (dStr.includes('/')) {
-                const [d, m, y] = dStr.split('/');
-                return new Date(Number(y), Number(m) - 1, Number(d));
-            }
-            return new Date(dStr + 'T00:00:00');
-        };
-
-        const rankingMap = new Map<string, { unit: string; owner: string; months: number; totalAmount: number }>();
-        let globalTotalDebt = 0;
-        let globalTotalBilled = 0;
-
-        const sortedHistory = [...historyData].sort((a, b) => {
-            const dateA = a.closedAt ? new Date(a.closedAt).getTime() : 0;
-            const dateB = b.closedAt ? new Date(b.closedAt).getTime() : 0;
-            return dateA - dateB;
-        });
-
-        sortedHistory.forEach(record => {
-            const dueDateStr = record.dueDate || `${settings.dueDay.toString().padStart(2, '0')}/${record.referenceMonth}`;
-            const dueDate = parseDate(dueDateStr);
-
-            let monthDebt = 0;
-            let monthBilled = 0;
-            let pendentesCount = 0;
-            const reportDetails: any[] = [];
-
-            (record.units || []).forEach(unit => {
-                const unitType = (record.unitTypes || []).find(t => t.id === unit.typeId);
-                const baseFee = unitType?.baseFee || 0;
-                
-                // Incluir taxas extras do snapshot
-                const appliedExtraFeesTotal = (record.extraFees || []).reduce((feeSum, fee) => {
-                    const feeValue = fee.values.find(v => v.unitTypeId === unit.typeId)?.value || 0;
-                    return feeSum + feeValue;
-                }, 0);
-
-                const gasConsumption = Math.max(0, (unit.currentGasReading || 0) - (unit.lastGasReading || 0));
-                const gasValue = gasConsumption * (record.gasPrice || 0);
-                const amount = unit.amountPaid && unit.amountPaid > 0 ? unit.amountPaid : (baseFee + gasValue + appliedExtraFeesTotal);
-
-                monthBilled += amount;
-
-                if (unit.status !== 'pago' && dueDate < today) {
-                    pendentesCount++;
-                    monthDebt += amount;
-                    reportDetails.push({
-                        unit: unit.id,
-                        owner: unit.ownerName,
-                        dueDate: dueDateStr,
-                        amount: amount
-                    });
-
-                    const existing = rankingMap.get(unit.id) || { unit: unit.id, owner: unit.ownerName, months: 0, totalAmount: 0 };
-                    existing.months += 1;
-                    existing.totalAmount += amount;
-                    rankingMap.set(unit.id, existing);
-                }
-            });
-
-            globalTotalBilled += monthBilled;
-            globalTotalDebt += monthDebt;
-
-            if (pendentesCount > 0) {
-                result.push({
-                    name: record.referenceMonth,
-                    total: monthDebt,
-                    amount: pendentesCount,
-                    reportDetails
-                });
-            }
-        });
-
-        const rankingList = Array.from(rankingMap.values()).sort((a, b) => b.totalAmount - a.totalAmount).slice(0, 5);
-
-        return {
-            chartData: result,
-            ranking: rankingList,
-            kpis: {
-                totalDebt: globalTotalDebt,
-                uniqueUnits: rankingMap.size,
-                rate: globalTotalBilled > 0 ? (globalTotalDebt / globalTotalBilled) * 100 : 0
-            }
-        };
-    }, [historyData, settings.dueDay]);
-
-    // ==========================================
-    // DATA PREP: 2. Financeiro (Fluxo Caixa & DRE)
-    // ==========================================
-    const fluxoDeCaixaStats = useMemo(() => {
-        let totalReceitas = 0;
-        let totalDespesas = 0;
-
-        // Month Aggregation Map Map<"~YYYY-MM", { rec: 0, des: 0 }>
-        const monthlyMap = new Map<string, { monthGroup: string; entradas: number; saidas: number }>();
-        // Category Aggregation Map<CategoryId, { name: string, amount: number, type: 'income'|'expense' }>
-        const catMap = new Map<string, { name: string; amount: number; type: 'income' | 'expense' }>();
-
-        const ensureMonth = (dStr: string) => {
-            const m = dStr.substring(0, 7); // YYYY-MM
-            if (!monthlyMap.has(m)) {
-                const label = m.includes('-') ? `${m.split('-')[1]}/${m.split('-')[0]}` : m;
-                monthlyMap.set(m, { monthGroup: label, entradas: 0, saidas: 0 });
-            }
-            return m;
-        };
-
-        const addCategory = (catId: string, amount: number, type: 'income' | 'expense') => {
-            const foundById = categoriesData.find(c => c.id === catId);
-            const foundByName = categoriesData.find(c => c.name === catId);
-
-            const nameStr = foundById ? foundById.name : (foundByName ? foundByName.name : (catId || (type === 'income' ? 'Receitas Diversas' : 'Despesas Diversas')));
-            const uid = foundById ? foundById.id : (foundByName ? foundByName.id : (catId || `sem_categoria_${type}`));
-
-            if (!catMap.has(uid)) {
-                catMap.set(uid, { name: nameStr, amount: 0, type });
-            }
-            const existing = catMap.get(uid)!;
-            existing.amount += amount;
-        };
-
-        // 1. Process Paid Revenues
-        // IMPORTANT: Exclude auto-generated billing revenues (category 'Taxa Condominial')
-        // because paid units from historyData are already counted separately below.
-        // This prevents double-counting the same income.
-        revenuesData.forEach(rev => {
-            if (rev.category === 'Taxa Condominial') return; // Skip auto-generated billing entries
-            
-            // Filter by selected category
-            if (selectedCategoryId !== 'all' && rev.category !== selectedCategoryId) return;
-
-            if (rev.conciliated || rev.id) { // Usually 'conciliated' means paid in your sys, assuming valid revenue
-                totalReceitas += rev.amount;
-                const m = ensureMonth(rev.date);
-                monthlyMap.get(m)!.entradas += rev.amount;
-                addCategory(rev.category || '', rev.amount, 'income');
-            }
-        });
-
-        // 2. Process Paid History Units (Faturas de Condominio)
-        // Only if filtering for 'TAXA_CONDOMINIAL' or 'all'
-        const showTaxaCondominial = selectedCategoryId === 'all' || selectedCategoryId === 'TAXA_CONDOMINIAL';
-
-        if (showTaxaCondominial) {
-            historyData.forEach(record => {
-                const refMonthArr = record.referenceMonth.split('/'); // MM/YYYY
-                const recordBaseLabel = refMonthArr.length === 2 ? `${refMonthArr[1]}-${refMonthArr[0]}` : record.closedAt?.substring(0, 7) || '2000-01';
-
-                (record.units || []).forEach(unit => {
-                    if (unit.status === 'pago') {
-                        // Calculate exactly what was paid
-                        const unitType = (record.unitTypes || []).find(t => t.id === unit.typeId);
-                        const baseFee = unitType?.baseFee || 0;
-                        
-                        // Incluir taxas extras do snapshot
-                        const appliedExtraFeesTotal = (record.extraFees || []).reduce((feeSum, fee) => {
-                            const feeValue = fee.values.find(v => v.unitTypeId === unit.typeId)?.value || 0;
-                            return feeSum + feeValue;
-                        }, 0);
-
-                        const gasConsumption = Math.max(0, (unit.currentGasReading || 0) - (unit.lastGasReading || 0));
-                        const gasValue = gasConsumption * (record.gasPrice || 0);
-                        const amount = unit.amountPaid && unit.amountPaid > 0 ? unit.amountPaid : (baseFee + gasValue + appliedExtraFeesTotal);
-
-                        totalReceitas += amount;
-                        const m = ensureMonth(unit.paymentDate ? unit.paymentDate : recordBaseLabel);
-                        monthlyMap.get(m)!.entradas += amount;
-                        addCategory('TAXA_CONDOMINIAL', amount, 'income'); // Special reserved alias 
-                    }
-                });
-            });
-        }
-
-        // 3. Process Paid Expenses
-        expensesData.forEach(exp => {
-            if (exp.conciliated || exp.id) { // Assume paid
-                // Filter by selected category
-                const foundById = categoriesData.find(c => c.id === exp.category);
-                const foundByName = categoriesData.find(c => c.name === exp.category);
-                const actualCatId = foundById ? foundById.id : (foundByName ? foundByName.id : exp.category || '');
-
-                if (selectedCategoryId !== 'all' && actualCatId !== selectedCategoryId) return;
-
-                totalDespesas += exp.amount;
-                const m = ensureMonth(exp.date);
-                monthlyMap.get(m)!.saidas += exp.amount;
-
-                addCategory(actualCatId, exp.amount, 'expense');
-            }
-        });
-
-        // Build Stacked Chart Data (Sorted by month chronologically)
-        const sortedMonths = Array.from(monthlyMap.keys()).sort();
-        const stackedChartData = sortedMonths.map(k => {
-            const data = monthlyMap.get(k)!;
-            return {
-                name: data.monthGroup,
-                Entradas: data.entradas,
-                Saídas: data.saidas
-            };
-        });
-
-        // Build Pie and DRE Data
-        const dreList = Array.from(catMap.values())
-            .map(c => ({
-                ...c,
-                percent: c.type === 'expense'
-                    ? (totalDespesas > 0 ? (c.amount / totalDespesas) * 100 : 0)
-                    : (totalReceitas > 0 ? (c.amount / totalReceitas) * 100 : 0)
-            }))
-            .sort((a, b) => b.amount - a.amount);
-
-        const expenseCategories = dreList.filter(d => d.type === 'expense');
-
-        // Color Palette for Pie Chart
-        const COLORS = ['#f43f5e', '#f97316', '#eab308', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6', '#64748b'];
-
-        const pieData = expenseCategories.map((ec, idx) => ({
-            name: ec.name,
-            value: ec.amount,
-            color: COLORS[idx % COLORS.length]
-        }));
-
-        // Special label injection for Faturas
-        dreList.forEach(d => {
-            if (d.name === 'TAXA_CONDOMINIAL' || (d.name === 'Receitas Diversas' && d.type === 'income')) {
-                // If it picked up Taxa Condominial from category alias or fallback
-                d.name = 'Taxas Condominiais (Faturas)';
-            }
-        });
-
-        return {
-            stackedChartData,
-            pieData,
-            dreList,
-            kpis: {
-                totalIn: totalReceitas,
-                totalOut: totalDespesas,
-                balance: totalReceitas - totalDespesas
-            }
-        };
-
-    }, [closuresData, revenuesData, expensesData, historyData, categoriesData, selectedCategoryId]);
-
-    // ==========================================
     // DATA PREP: 3. Consumo (Gas)
     // ==========================================
     const consumoStats = useMemo(() => {
-        const sortedHistory = [...historyData].sort((a, b) => {
-            const dateA = a.closedAt ? new Date(a.closedAt).getTime() : 0;
-            const dateB = b.closedAt ? new Date(b.closedAt).getTime() : 0;
-            return dateA - dateB;
-        });
+        if (apiStats?.consumption) return apiStats.consumption;
 
-        // 1. Line Chart Data (Last 12 months in history)
-        const chartData = sortedHistory.slice(-12).map(record => {
-            let totalGas = 0;
-            (record.units || []).forEach(u => {
-                totalGas += Math.max(0, (u.currentGasReading || 0) - (u.lastGasReading || 0));
-            });
-            return {
-                name: record.referenceMonth,
-                Consumo: totalGas
-            };
-        });
-
-        // 2. Unit Audit Logic
-        // We need to compare current (last record) vs previous record
-        const lastRecord = sortedHistory[sortedHistory.length - 1];
-        const prevRecord = sortedHistory[sortedHistory.length - 2];
-
-        const auditTable = (lastRecord?.units || []).map(unit => {
-            const consumption = Math.max(0, (unit.currentGasReading || 0) - (unit.lastGasReading || 0));
-
-            // Find same unit in previous record
-            const prevUnit = prevRecord?.units?.find(u => u.id === unit.id);
-            const prevConsumption = prevUnit ? Math.max(0, (prevUnit.currentGasReading || 0) - (prevUnit.lastGasReading || 0)) : 0;
-
-            // Calculate variation
-            const variation = prevConsumption > 0 ? ((consumption / prevConsumption) - 1) * 100 : 0;
-
-            // Calculate average for this unit excluding current month for better comparison
-            let totalUnitCons = 0;
-            let occurrences = 0;
-            sortedHistory.slice(0, -1).forEach(h => {
-                const uMatch = h.units?.find(u => u.id === unit.id);
-                if (uMatch) {
-                    totalUnitCons += Math.max(0, (uMatch.currentGasReading || 0) - (uMatch.lastGasReading || 0));
-                    occurrences++;
-                }
-            });
-
-            const unitAverage = occurrences > 0 ? totalUnitCons / occurrences : consumption;
-
-            // Alert if consumption is > 30% above average OR > 30% above previous month
-            // Minimum threshold of 1.0m³ to avoid alerting on tiny variations
-            const isAlert = (consumption > 1.0) && (
-                (occurrences > 0 && consumption > unitAverage * 1.3) ||
-                (prevConsumption > 0 && variation > 30)
-            );
-
-            return {
-                id: unit.id,
-                consumption,
-                prevConsumption,
-                variation,
-                isAlert
-            };
-        }).sort((a, b) => b.consumption - a.consumption);
-
-        // 3. KPIs
+        // Fallback local se a API ainda não carregou (opcional, mas bom para UX)
         return {
-            chartData,
-            auditTable,
+            chartData: [],
+            auditTable: [],
             kpis: {
-                latestTotal: chartData.length > 0 ? chartData[chartData.length - 1].Consumo : 0,
-                avgPerUnit: auditTable.length > 0 ? (chartData.length > 0 ? chartData[chartData.length - 1].Consumo / auditTable.length : 0) : 0,
+                latestTotal: 0,
+                avgPerUnit: 0,
                 gasPrice: settings.gasPrice || 0
             }
         };
-    }, [historyData, settings.gasPrice]);
+    }, [apiStats, settings.gasPrice]);
 
     // ==========================================
     // DATA PREP: 4. Operacional (Ocorrências)
     // ==========================================
     const ocorrenciasStats = useMemo(() => {
-        const total = ocorrenciasData.length;
-        const resolvidas = ocorrenciasData.filter(o => o.status === 'Resolvida');
-        const pendentes = ocorrenciasData.filter(o => o.status !== 'Resolvida');
-
-        // SLA Calculation (Days)
-        let totalDays = 0;
-        let resCount = 0;
-        resolvidas.forEach(o => {
-            if (o.dataAbertura && o.dataResolucao) {
-                const open = new Date(o.dataAbertura).getTime();
-                const close = new Date(o.dataResolucao).getTime();
-                totalDays += (close - open) / (1000 * 60 * 60 * 24);
-                resCount++;
-            }
-        });
-        const sla = resCount > 0 ? totalDays / resCount : 0;
-
-        // Group by Category
-        const catMap: Record<string, number> = {};
-        ocorrenciasData.forEach(o => {
-            catMap[o.categoria] = (catMap[o.categoria] || 0) + 1;
-        });
-        const categoryData = Object.entries(catMap)
-            .map(([name, value]) => ({ name, value }))
-            .sort((a, b) => b.value - a.value);
-
-        // Status Chart Data
-        const statusData = [
-            { name: 'Pendentes', value: pendentes.length, color: '#f59e0b' },
-            { name: 'Resolvidas', value: resolvidas.length, color: '#10b981' }
-        ];
-
-        // Critical List: Top 5 High Priority Pending
-        const criticalList = pendentes
-            .filter(o => o.prioridade === 'Alta')
-            .sort((a, b) => new Date(a.dataAbertura).getTime() - new Date(b.dataAbertura).getTime())
-            .slice(0, 5);
-
+        if (apiStats?.operational) {
+            const { statusCounts, categoryBreakdown } = apiStats.operational;
+            return {
+                total: statusCounts.Total,
+                resolvedCount: statusCounts.Resolvida,
+                pendingCount: statusCounts.Aberta,
+                resolutionRate: statusCounts.resolutionRate,
+                sla: statusCounts.sla,
+                criticalList: statusCounts.criticalList || [],
+                statusData: [
+                    { name: 'Pendentes', value: statusCounts.Aberta, color: '#f59e0b' },
+                    { name: 'Resolvidas', value: statusCounts.Resolvida, color: '#10b981' }
+                ],
+                categoryData: Object.entries(categoryBreakdown || {}).map(([name, value]) => ({ name, value: value as number }))
+            };
+        }
         return {
-            total,
-            resolvedCount: resolvidas.length,
-            pendingCount: pendentes.length,
-            resolutionRate: total > 0 ? (resolvidas.length / total) * 100 : 0,
-            sla: sla.toFixed(1),
-            statusData,
-            categoryData,
-            criticalList
+            total: 0,
+            resolvedCount: 0,
+            pendingCount: 0,
+            resolutionRate: 0,
+            sla: "0",
+            criticalList: [],
+            statusData: [],
+            categoryData: []
         };
-    }, [ocorrenciasData]);
+    }, [apiStats]);
+
+    // Ocorrências e Consumo agora são processados no backend via apiStats
+
 
 
     // ==========================================
@@ -556,44 +263,23 @@ export const ReportsPage = () => {
             const referenceStr = `${sM}/${sY} a ${eM}/${eY}`;
             
             await generateFinancialReport({
-                settings,
                 referenceMonth: referenceStr,
-                expenses: expensesData,
-                revenues: revenuesData,
-                categories: categoriesData,
-                bankAccounts: bankAccounts || [],
-                initialBalance: 0 
+                includeReceipts: true
             });
         } else if (type === 'consumo') {
             if (historyData.length > 0) {
-                const latest = [...historyData].sort((a,b) => {
-                    const [mA, yA] = a.referenceMonth.split('/');
-                    const [mB, yB] = b.referenceMonth.split('/');
-                    return (parseInt(yB) * 100 + parseInt(mB)) - (parseInt(yA) * 100 + parseInt(mA));
-                })[0];
+                const latest = historyData[historyData.length - 1];
                 await generateGasReport(latest.referenceMonth);
             }
         } else if (type === 'inadimplencia') {
             await generateDelinquencyReport();
         } else if (type === 'operacional') {
-            // Relatório Operacional Simples
-            const doc = new jsPDF();
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(16);
-            doc.text(`Relatório Operacional (Chamados)`, 15, 20);
-            autoTable(doc, {
-                startY: 30,
-                head: [['Título', 'Categoria', 'Status', 'Data']],
-                body: ocorrenciasData.map(o => [o.titulo, o.categoria, o.status, new Date(o.dataAbertura).toLocaleDateString('pt-BR')]),
-                theme: 'striped',
-                headStyles: { fillColor: [17, 212, 98] }
-            });
-            doc.save(`Relatorio_Operacional.pdf`);
+            await generateOcorrenciasReport();
         }
     };
 
     const categoryOptions = useMemo(() => {
-        const options = categoriesData.map(c => ({ value: c.id, label: c.name }));
+        const options = (contextCategories || []).map((c: any) => ({ value: c.id, label: c.name }));
         options.unshift({ value: 'all', label: 'Todas as Categorias' });
         
         // Add virtual Taxa Condominial if not explicitly there
@@ -601,7 +287,7 @@ export const ReportsPage = () => {
             options.push({ value: 'TAXA_CONDOMINIAL', label: 'Taxas Condominiais' });
         }
         return options;
-    }, [categoriesData]);
+    }, [contextCategories]);
 
 
 
@@ -716,21 +402,21 @@ export const ReportsPage = () => {
                                                 metrics={[
                                                     {
                                                         label: "TOTAL DEVIDO",
-                                                        value: inadimplenciaStats.kpis.totalDebt.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                                                        value: (inadimplenciaStats.kpis?.totalDebt ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                                                         icon: <DollarSign />,
                                                         variant: "rose",
                                                         subtext: "Débito Acumulado"
                                                     },
                                                     {
                                                         label: "UNIDADES DEVEDORAS",
-                                                        value: inadimplenciaStats.kpis.uniqueUnits.toString(),
+                                                        value: (inadimplenciaStats.kpis?.uniqueUnits ?? 0).toString(),
                                                         icon: <Tag />,
                                                         variant: "slate",
                                                         subtext: "Devedores Atuais"
                                                     },
                                                     {
                                                         label: "% INADIMPLÊNCIA",
-                                                        value: `${inadimplenciaStats.kpis.rate.toFixed(1)}%`,
+                                                        value: `${(inadimplenciaStats.kpis?.rate ?? 0).toFixed(1)}%`,
                                                         icon: <PieChartIcon />,
                                                         variant: "amber",
                                                         subtext: "Variação do Rateio"
@@ -747,21 +433,21 @@ export const ReportsPage = () => {
                                                 metrics={[
                                                     {
                                                         label: "TOTAL DEVIDO",
-                                                        value: inadimplenciaStats.kpis.totalDebt.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                                                        value: (inadimplenciaStats.kpis?.totalDebt ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                                                         icon: <DollarSign />,
                                                         variant: "rose",
                                                         subtext: "Débito Acumulado"
                                                     },
                                                     {
                                                         label: "UNIDADES DEVEDORAS",
-                                                        value: inadimplenciaStats.kpis.uniqueUnits.toString(),
+                                                        value: (inadimplenciaStats.kpis?.uniqueUnits ?? 0).toString(),
                                                         icon: <Tag />,
                                                         variant: "slate",
                                                         subtext: "Devedores Atuais"
                                                     },
                                                     {
                                                         label: "% INADIMPLÊNCIA",
-                                                        value: `${inadimplenciaStats.kpis.rate.toFixed(1)}%`,
+                                                        value: `${(inadimplenciaStats.kpis?.rate ?? 0).toFixed(1)}%`,
                                                         icon: <PieChartIcon />,
                                                         variant: "amber",
                                                         subtext: "Variação do Rateio"
@@ -797,7 +483,7 @@ export const ReportsPage = () => {
                                             <div className="xl:w-96 flex flex-col border border-slate-100 rounded-2xl overflow-hidden bg-white shadow-sm">
                                                 <div className="bg-slate-50 px-5 py-3 border-b border-slate-100 font-bold text-[10px] uppercase text-slate-500 tracking-widest">Top 5 Devedores</div>
                                                 <div className="divide-y divide-slate-50 overflow-y-auto max-h-[350px]">
-                                                    {inadimplenciaStats.ranking.map((rank) => (
+                                                    {(inadimplenciaStats.ranking || []).map((rank: InadimplenciaRankItem) => (
                                                         <div key={rank.unit} className="p-4 flex justify-between items-center hover:bg-slate-50 transition-colors">
                                                             <div className="flex items-center gap-3">
                                                                 <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-black text-slate-400 text-xs">
@@ -809,12 +495,12 @@ export const ReportsPage = () => {
                                                                 </div>
                                                             </div>
                                                             <div className="text-right">
-                                                                <span className="font-black text-sm text-rose-600 block">{rank.totalAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
-                                                                <p className="text-[10px] text-slate-400 font-bold uppercase">{rank.months} meses</p>
+                                                                <span className="font-black text-sm text-rose-600 block">{(rank.totalAmount ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                                                                <p className="text-[10px] text-slate-400 font-bold uppercase">{rank.months} meses • {rank.status}</p>
                                                             </div>
                                                         </div>
                                                     ))}
-                                                    {inadimplenciaStats.ranking.length === 0 && <div className="p-8 text-center text-xs text-slate-400 uppercase font-bold tracking-widest opacity-50">Nenhum registro encontrado</div>}
+                                                    {(inadimplenciaStats.ranking || []).length === 0 && <div className="p-8 text-center text-xs text-slate-400 uppercase font-bold tracking-widest opacity-50">Nenhum registro encontrado</div>}
                                                 </div>
                                             </div>
                                         </div>
@@ -864,24 +550,24 @@ export const ReportsPage = () => {
                                             metrics={[
                                                 {
                                                     label: "TOTAL RECEBIDO",
-                                                    value: fluxoDeCaixaStats.kpis.totalIn.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                                                    value: (fluxoDeCaixaStats.kpis?.totalIn ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                                                     icon: <TrendingUp />,
                                                     variant: "emerald",
                                                     subtext: "Entradas do Período"
                                                 },
                                                 {
                                                     label: "TOTAL PAGO",
-                                                    value: fluxoDeCaixaStats.kpis.totalOut.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                                                    value: (fluxoDeCaixaStats.kpis?.totalOut ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                                                     icon: <TrendingDown />,
                                                     variant: "rose",
                                                     subtext: "Saídas do Período"
                                                 },
                                                 {
                                                     label: "RESULTADO LÍQUIDO",
-                                                    value: fluxoDeCaixaStats.kpis.balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                                                    value: (fluxoDeCaixaStats.kpis?.balance ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                                                     icon: <Scale />,
-                                                    variant: fluxoDeCaixaStats.kpis.balance >= 0 ? "emerald" : "rose",
-                                                    subtext: fluxoDeCaixaStats.kpis.balance >= 0 ? "Superávit" : "Déficit"
+                                                    variant: (fluxoDeCaixaStats.kpis?.balance ?? 0) >= 0 ? "emerald" : "rose",
+                                                    subtext: (fluxoDeCaixaStats.kpis?.balance ?? 0) >= 0 ? "Superávit" : "Déficit"
                                                 },
                                                 {
                                                     label: "FUNDO DE RESERVA",
@@ -903,7 +589,7 @@ export const ReportsPage = () => {
                                             <div className="flex flex-col bg-slate-50/30 rounded-2xl p-4 md:p-6 border border-slate-100 min-w-0">
                                                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 text-center">Fluxo Histórico (Entradas vs Saídas)</h3>
                                                 <div className="h-[280px] w-full relative">
-                                                    {fluxoDeCaixaStats.stackedChartData.length > 0 ? (
+                                                    { (fluxoDeCaixaStats.stackedChartData || []).length > 0 ? (
                                                         <ResponsiveContainer width="99%" height="100%">
                                                             <BarChart data={fluxoDeCaixaStats.stackedChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -923,7 +609,7 @@ export const ReportsPage = () => {
                                             <div className="flex flex-col bg-slate-50/30 rounded-2xl p-4 md:p-6 border border-slate-100 min-w-0">
                                                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 text-center">Distribuição de Saídas por Categoria</h3>
                                                 <div className="h-[400px] md:h-[280px] w-full relative">
-                                                    {fluxoDeCaixaStats.pieData.length > 0 ? (
+                                                    { (fluxoDeCaixaStats.pieData || []).length > 0 ? (
                                                         <ResponsiveContainer width="99%" height="100%">
                                                             <PieChart>
                                                                 <Pie
@@ -936,7 +622,7 @@ export const ReportsPage = () => {
                                                                     dataKey="value"
                                                                     stroke="none"
                                                                 >
-                                                                    {fluxoDeCaixaStats.pieData.map((entry, index) => (
+                                                                    { (fluxoDeCaixaStats.pieData || []).map((entry, index) => (
                                                                         <Cell key={`cell-${index}`} fill={entry.color} />
                                                                     ))}
                                                                 </Pie>
@@ -969,77 +655,92 @@ export const ReportsPage = () => {
                                                         </HabitaTR>
                                                     </HabitaTHead>
                                                     <HabitaTBody>
-                                                        {fluxoDeCaixaStats.dreList.length > 0 ? fluxoDeCaixaStats.dreList.map((item, idx) => (
-                                                            <HabitaTR key={idx}>
-                                                                {/* Mobile Layout */}
-                                                                <HabitaTD className="md:hidden py-3">
-                                                                    <div className="flex flex-col gap-2 w-full">
-                                                                        <div className="flex justify-between items-start">
-                                                                            <div className="flex flex-col">
-                                                                                <span className="font-bold text-slate-700 text-sm leading-tight">{item.name === 'TAXA_CONDOMINIAL' ? 'Taxa Condominial' : item.name}</span>
-                                                                                <span className={cn(
-                                                                                    "text-[9px] mt-0.5 uppercase tracking-widest font-black",
-                                                                                    item.type === 'income' ? 'text-emerald-500' : 'text-rose-400'
-                                                                                )}>
-                                                                                    {item.type === 'income' ? '● Receita' : '● Despesa'}
-                                                                                </span>
-                                                                            </div>
-                                                                            <div className="text-right">
-                                                                                <span className={cn(
-                                                                                    "font-black text-sm",
-                                                                                    item.type === 'income' ? 'text-emerald-600' : 'text-rose-500'
-                                                                                )}>
-                                                                                    {item.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                                                                                </span>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="flex items-center justify-between gap-3">
-                                                                            <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                                                <div className={cn(
-                                                                                    "h-full transition-all duration-1000",
-                                                                                    item.type === 'income' ? 'bg-emerald-400' : 'bg-rose-400'
-                                                                                )} style={{ width: `${Math.min(item.percent, 100)}%` }} />
-                                                                            </div>
-                                                                            <span className="text-[10px] font-black text-slate-400">{item.percent.toFixed(1)}%</span>
-                                                                        </div>
-                                                                    </div>
-                                                                </HabitaTD>
-
-                                                                <HabitaTD label="Categoria" className="hidden md:table-cell py-4">
+                                                        {/* SECTION: RECEITAS */}
+                                                        <HabitaTR className="bg-emerald-50/20">
+                                                            <HabitaTD colSpan={3} className="py-2.5 px-6">
+                                                                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none flex items-center gap-2">
+                                                                    <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-200" />
+                                                                    Receitas Operacionais
+                                                                </span>
+                                                            </HabitaTD>
+                                                        </HabitaTR>
+                                                        { (fluxoDeCaixaStats.incomeCategories || []).map((item: FinancialCategoryItem, idx: number) => (
+                                                            <HabitaTR key={`in-${idx}`}>
+                                                                <HabitaTD className="py-3 px-8">
                                                                     <div className="flex flex-col">
-                                                                        <span className="font-bold text-slate-700">{item.name === 'TAXA_CONDOMINIAL' ? 'Taxa Condominial' : item.name}</span>
-                                                                        <span className={cn(
-                                                                            "text-[9px] mt-0.5 uppercase tracking-widest font-black",
-                                                                            item.type === 'income' ? 'text-emerald-500' : 'text-rose-400'
-                                                                        )}>
-                                                                            {item.type === 'income' ? '● Receita' : '● Despesa'}
-                                                                        </span>
+                                                                        <span className="font-bold text-slate-700 text-sm">{item.name}</span>
+                                                                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Entrada Identificada</span>
                                                                     </div>
                                                                 </HabitaTD>
-                                                                <HabitaTD label="Valor" align="right" className={cn(
-                                                                    "hidden md:table-cell",
-                                                                    "font-black text-xs",
-                                                                    item.type === 'income' ? 'text-emerald-600' : 'text-rose-500'
-                                                                )}>
-                                                                    {item.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                                                <HabitaTD align="right" className="font-black text-emerald-600 text-sm">
+                                                                    {(item.amount ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                                                 </HabitaTD>
-                                                                <HabitaTD label="% do Total" align="right" className="hidden md:table-cell">
+                                                                <HabitaTD align="right">
                                                                     <div className="flex items-center justify-end gap-3">
-                                                                        <span className="text-xs font-bold text-slate-500">{item.percent.toFixed(1)}%</span>
-                                                                        <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden shrink-0">
-                                                                            <div className={cn(
-                                                                                "h-full transition-all duration-1000",
-                                                                                item.type === 'income' ? 'bg-emerald-400' : 'bg-rose-400'
-                                                                            )} style={{ width: `${Math.min(item.percent, 100)}%` }} />
+                                                                        <span className="text-xs font-bold text-slate-400">{(item.percent ?? 0).toFixed(1)}%</span>
+                                                                        <div className="w-16 h-1 bg-slate-100 rounded-full overflow-hidden shrink-0">
+                                                                            <div className="h-full bg-emerald-400 transition-all duration-1000" style={{ width: `${Math.min(item.percent ?? 0, 100)}%` }} />
                                                                         </div>
                                                                     </div>
                                                                 </HabitaTD>
                                                             </HabitaTR>
-                                                        )) : (
-                                                            <HabitaTR>
-                                                                <td colSpan={3} className="py-10 text-center text-[10px] font-black text-slate-300 uppercase tracking-widest">Nenhum registro encontrado</td>
+                                                        ))}
+                                                        <HabitaTR className="bg-emerald-50/40 border-t border-emerald-100/50">
+                                                            <HabitaTD className="py-2.5 px-8 font-black text-emerald-700 text-[10px] uppercase tracking-wider">Subtotal de Receitas</HabitaTD>
+                                                            <HabitaTD align="right" className="font-black text-emerald-700 text-sm">{ (fluxoDeCaixaStats.kpis?.totalIn ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</HabitaTD>
+                                                            <HabitaTD align="right" className="font-black text-emerald-700 text-[10px] pr-8">100%</HabitaTD>
+                                                        </HabitaTR>
+
+                                                        {/* SECTION: DESPESAS */}
+                                                        <HabitaTR className="bg-rose-50/20 mt-4">
+                                                            <HabitaTD colSpan={3} className="py-2.5 px-6">
+                                                                <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest leading-none flex items-center gap-2">
+                                                                    <div className="w-2 h-2 rounded-full bg-rose-500 shadow-sm shadow-rose-200" />
+                                                                    Despesas Operacionais
+                                                                </span>
+                                                            </HabitaTD>
+                                                        </HabitaTR>
+                                                        { (fluxoDeCaixaStats.expenseCategories || []).map((item: FinancialCategoryItem, idx: number) => (
+                                                            <HabitaTR key={`out-${idx}`}>
+                                                                <HabitaTD className="py-3 px-8">
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-bold text-slate-700 text-sm">{item.name}</span>
+                                                                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Saída Registrada</span>
+                                                                    </div>
+                                                                </HabitaTD>
+                                                                <HabitaTD align="right" className="font-black text-rose-500 text-sm">
+                                                                    {(item.amount ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                                                </HabitaTD>
+                                                                <HabitaTD align="right">
+                                                                    <div className="flex items-center justify-end gap-3">
+                                                                        <span className="text-xs font-bold text-slate-400">{(item.percent ?? 0).toFixed(1)}%</span>
+                                                                        <div className="w-16 h-1 bg-slate-100 rounded-full overflow-hidden shrink-0">
+                                                                            <div className="h-full bg-rose-400 transition-all duration-1000" style={{ width: `${Math.min(item.percent ?? 0, 100)}%` }} />
+                                                                        </div>
+                                                                    </div>
+                                                                </HabitaTD>
                                                             </HabitaTR>
-                                                        )}
+                                                        ))}
+                                                        <HabitaTR className="bg-rose-50/40 border-t border-rose-100/50">
+                                                            <HabitaTD className="py-2.5 px-8 font-black text-rose-700 text-[10px] uppercase tracking-wider">Subtotal de Despesas</HabitaTD>
+                                                            <HabitaTD align="right" className="font-black text-rose-700 text-sm">{ (fluxoDeCaixaStats.kpis?.totalOut ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</HabitaTD>
+                                                            <HabitaTD align="right" className="font-black text-rose-700 text-[10px] pr-8">100%</HabitaTD>
+                                                        </HabitaTR>
+
+                                                        {/* TOTAL NET RESULT */}
+                                                        <HabitaTR className="bg-slate-900 text-white">
+                                                            <HabitaTD className="py-5 px-8 font-black uppercase tracking-[0.2em] text-[11px]">Resultado Consolidado</HabitaTD>
+                                                            <HabitaTD align="right" className="font-black text-lg">{ (fluxoDeCaixaStats.kpis?.balance ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</HabitaTD>
+                                                            <HabitaTD align="right">
+                                                                <div className={cn(
+                                                                    "inline-flex items-center px-3 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-widest",
+                                                                    (fluxoDeCaixaStats.kpis?.balance ?? 0) >= 0 ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"
+                                                                )}>
+                                                                    { (fluxoDeCaixaStats.kpis?.balance ?? 0) >= 0 ? 'Superávit' : 'Déficit'}
+                                                                </div>
+                                                            </HabitaTD>
+                                                        </HabitaTR>
+
                                                     </HabitaTBody>
                                                 </HabitaTable>
                                             </div>
@@ -1060,21 +761,21 @@ export const ReportsPage = () => {
                                         metrics={[
                                             {
                                                 label: "VOLUME TOTAL",
-                                                value: `${consumoStats.kpis.latestTotal.toFixed(2)} m³`,
+                                                value: `${(consumoStats.kpis?.latestTotal ?? 0).toFixed(2)} m³`,
                                                 icon: <TrendingUp />,
                                                 variant: "indigo",
                                                 subtext: "Última Apuração"
                                             },
                                             {
                                                 label: "MÉDIA POR UNIDADE",
-                                                value: `${consumoStats.kpis.avgPerUnit.toFixed(2)} m³`,
+                                                value: `${(consumoStats.kpis?.avgPerUnit ?? 0).toFixed(2)} m³`,
                                                 icon: <PieChartIcon />,
                                                 variant: "slate",
                                                 subtext: "Rateio Médio"
                                             },
                                             {
                                                 label: "CUSTO MÉDIO",
-                                                value: (consumoStats.kpis.latestTotal * (settings.gasPrice || 10)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                                                value: (consumoStats.kpis.totalValue ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                                                 icon: <DollarSign />,
                                                 variant: "amber",
                                                 subtext: "Projeção Total"
@@ -1091,21 +792,21 @@ export const ReportsPage = () => {
                                         metrics={[
                                             {
                                                 label: "VOLUME TOTAL",
-                                                value: `${consumoStats.kpis.latestTotal.toFixed(2)} m³`,
+                                                value: `${(consumoStats.kpis?.latestTotal ?? 0).toFixed(2)} m³`,
                                                 icon: <TrendingUp />,
                                                 variant: "indigo",
                                                 subtext: "Última Apuração"
                                             },
                                             {
                                                 label: "MÉDIA POR UNIDADE",
-                                                value: `${consumoStats.kpis.avgPerUnit.toFixed(2)} m³`,
+                                                value: `${(consumoStats.kpis?.avgPerUnit ?? 0).toFixed(2)} m³`,
                                                 icon: <PieChartIcon />,
                                                 variant: "slate",
                                                 subtext: "Rateio Médio"
                                             },
                                             {
                                                 label: "CUSTO MÉDIO",
-                                                value: (consumoStats.kpis.latestTotal * (settings.gasPrice || 10)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                                                value: (consumoStats.kpis.totalValue ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                                                 icon: <DollarSign />,
                                                 variant: "amber",
                                                 subtext: "Projeção Total"
@@ -1175,7 +876,7 @@ export const ReportsPage = () => {
                                                 </HabitaTR>
                                             </HabitaTHead>
                                             <HabitaTBody>
-                                                {consumoStats.auditTable.map((row) => (
+                                                {consumoStats.auditTable.map((row: ConsumoAuditItem) => (
                                                     <HabitaTR key={row.id}>
                                                         {/* Mobile Layout - Unified Standard */}
                                                         <HabitaTD className="md:hidden pt-4 pb-2">
@@ -1183,10 +884,10 @@ export const ReportsPage = () => {
                                                                 <div className="flex justify-between items-start">
                                                                     <div className="flex flex-col">
                                                                         <span className="font-bold text-slate-700 text-sm leading-tight tracking-tight">Unidade {row.id}</span>
-                                                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Mês Anterior: {row.prevConsumption.toFixed(2)} m³</span>
+                                                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Mês Anterior: { (row.prevConsumption ?? 0).toFixed(2) } m³</span>
                                                                     </div>
                                                                     <div className="text-right">
-                                                                        <span className="font-black text-sm text-slate-900">{row.consumption.toFixed(2)} m³</span>
+                                                                        <span className="font-black text-sm text-slate-900">{ (row.consumption ?? 0).toFixed(2) } m³</span>
                                                                     </div>
                                                                 </div>
                                                                 <div className="flex items-center justify-between">
@@ -1195,7 +896,7 @@ export const ReportsPage = () => {
                                                                             "text-[10px] font-black px-1.5 py-0.5 rounded",
                                                                             row.variation > 0 ? (row.variation > 30 ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-500') : 'bg-emerald-50 text-emerald-500'
                                                                         )}>
-                                                                            {row.variation > 0 ? '+' : ''}{row.variation.toFixed(1)}%
+                                                                            {row.variation > 0 ? '+' : ''}{(row.variation ?? 0).toFixed(1)}%
                                                                         </span>
                                                                         {row.isAlert ? (
                                                                             <HabitaBadge variant="error" size="xs" className="animate-pulse">
@@ -1211,13 +912,13 @@ export const ReportsPage = () => {
 
                                                         {/* Desktop Layout */}
                                                         <HabitaTD className="hidden md:table-cell font-black text-slate-700">Unidade {row.id}</HabitaTD>
-                                                        <HabitaTD align="right" className="hidden md:table-cell font-black text-slate-600">{row.consumption.toFixed(2)} m³</HabitaTD>
-                                                        <HabitaTD align="right" className="hidden md:table-cell text-slate-400 font-medium">{row.prevConsumption.toFixed(2)} m³</HabitaTD>
+                                                        <HabitaTD align="right" className="hidden md:table-cell font-black text-slate-600">{ (row.consumption ?? 0).toFixed(2) } m³</HabitaTD>
+                                                        <HabitaTD align="right" className="hidden md:table-cell text-slate-400 font-medium">{ (row.prevConsumption ?? 0).toFixed(2) } m³</HabitaTD>
                                                         <HabitaTD align="right" className={cn(
                                                             "hidden md:table-cell font-black text-xs",
                                                             row.variation > 0 ? (row.variation > 30 ? 'text-rose-600' : 'text-amber-500') : 'text-emerald-500'
                                                         )}>
-                                                            {row.variation > 0 ? '+' : ''}{row.variation.toFixed(1)}%
+                                                            {row.variation > 0 ? '+' : ''}{(row.variation ?? 0).toFixed(1)}%
                                                         </HabitaTD>
                                                         <HabitaTD align="center" className="hidden md:table-cell">
                                                             {row.isAlert ? (
@@ -1255,7 +956,7 @@ export const ReportsPage = () => {
                                                 },
                                                 {
                                                     label: "TAXA DE RESOLUÇÃO",
-                                                    value: `${ocorrenciasStats.resolutionRate.toFixed(1)}%`,
+                                                    value: `${(ocorrenciasStats.resolutionRate ?? 0).toFixed(1)}%`,
                                                     icon: <CheckCircle2 />,
                                                     variant: "emerald",
                                                     subtext: "Ocorrências Finalizadas"
@@ -1286,7 +987,7 @@ export const ReportsPage = () => {
                                                 },
                                                 {
                                                     label: "TAXA DE RESOLUÇÃO",
-                                                    value: `${ocorrenciasStats.resolutionRate.toFixed(1)}%`,
+                                                    value: `${(ocorrenciasStats.resolutionRate ?? 0).toFixed(1)}%`,
                                                     icon: <CheckCircle2 />,
                                                     variant: "emerald",
                                                     subtext: "Ocorrências Finalizadas"
@@ -1329,7 +1030,7 @@ export const ReportsPage = () => {
                                                                 dataKey="value"
                                                                 stroke="none"
                                                             >
-                                                                {ocorrenciasStats.statusData.map((entry, index) => (
+                                                                { (ocorrenciasStats.statusData || []).map((entry, index) => (
                                                                     <Cell key={`cell-${index}`} fill={entry.color} />
                                                                 ))}
                                                             </Pie>
@@ -1360,7 +1061,7 @@ export const ReportsPage = () => {
                                         </HabitaCardHeader>
                                         <div className="p-4 md:p-6">
                                             <div className="h-[280px] w-full min-w-0 relative">
-                                                {ocorrenciasStats.categoryData.length > 0 ? (
+                                                { (ocorrenciasStats.categoryData || []).length > 0 ? (
                                                     <ResponsiveContainer width="99%" height="100%">
                                                         <BarChart data={ocorrenciasStats.categoryData} layout="vertical" margin={{ left: 20, right: 20 }}>
                                                             <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
@@ -1416,7 +1117,7 @@ export const ReportsPage = () => {
                                                 </HabitaTR>
                                             </HabitaTHead>
                                             <HabitaTBody>
-                                                {ocorrenciasStats.criticalList.length > 0 ? ocorrenciasStats.criticalList.map((oc) => (
+                                                {ocorrenciasStats.criticalList.length > 0 ? ocorrenciasStats.criticalList.map((oc: Ocorrencia) => (
                                                     <HabitaTR key={oc.id}>
                                                         {/* Mobile Layout - Unified Standard */}
                                                         <HabitaTD className="md:hidden pt-4 pb-2">

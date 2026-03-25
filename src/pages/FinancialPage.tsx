@@ -29,12 +29,9 @@ import { hasPermission } from '../utils/rbac';
 
 export function FinancialPage() {
     const { 
-        expenses, 
-        revenues, 
         balances, 
         bankAccounts, 
         settings, 
-        virtualRevenues, 
         isMonthClosed,
         reloadCondoData 
     } = useApp();
@@ -63,8 +60,8 @@ export function FinancialPage() {
     const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
     const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
     const [isEditingCash, setIsEditingCash] = useState(false);
-    const [isEditingBank, setIsEditingBank] = useState(false);
-    const [isEditingReserve, setIsEditingReserve] = useState(false);
+    const [isEditingReserve, setIsEditingReserve] = useState(false); 
+
     const [globalMessage, setGlobalMessage] = useState(settings.mensagemGlobalFatura || '');
     const [isSavingMessage, setIsSavingMessage] = useState(false);
     const [isBankDetailsModalOpen, setIsBankDetailsModalOpen] = useState(false);
@@ -73,7 +70,6 @@ export function FinancialPage() {
     
     // States for balance editing
     const [editCashValue, setEditCashValue] = useState('');
-    const [editBankValue, setEditBankValue] = useState('');
     const [editReserveValue, setEditReserveValue] = useState('');
     const [isBalanceWarningOpen, setIsBalanceWarningOpen] = useState(false);
 
@@ -100,6 +96,54 @@ export function FinancialPage() {
         return isMonthClosed?.(`${month}/${year}`) || false;
     }, [filterMonth, isMonthClosed]);
 
+    // --- API Data Fetching ---
+    const [transactionalData, setTransactionalData] = useState<{
+        expenses: any[],
+        revenues: any[],
+        kpis: {
+            totalExpenses: number,
+            totalRevenues: number,
+            periodBalance: number,
+            totalBankBalance: number,
+            cashBalance: number,
+            reserveBalance: number
+        }
+    }>({
+        expenses: [],
+        revenues: [],
+        kpis: {
+            totalExpenses: 0,
+            totalRevenues: 0,
+            periodBalance: 0,
+            totalBankBalance: 0,
+            cashBalance: 0,
+            reserveBalance: 0
+        }
+    });
+    const fetchTransactions = async () => {
+        try {
+            const response = await api.get('/financial/transactions', {
+                params: {
+                    month: filterMonth,
+                    categoryId: filterCategory,
+                    search: searchTerm
+                }
+            });
+            if (response.data.success) {
+                setTransactionalData(response.data.data);
+            }
+        } catch (error) {
+            console.error("Error fetching transactions:", error);
+            showToast("Erro ao carregar lançamentos do servidor", "error");
+        }
+    };
+
+    useEffect(() => {
+        fetchTransactions();
+    }, [filterMonth, filterCategory, searchTerm]);
+
+    const { expenses: filteredExpenses, revenues: allRevenues, kpis } = transactionalData;
+
     if (!canViewFinancial) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-4">
@@ -111,10 +155,6 @@ export function FinancialPage() {
             </div>
         );
     }
-
-    // Form & Filter state hooks are now moved to the top
-
-
 
     // --- Actions ---
 
@@ -137,8 +177,8 @@ export function FinancialPage() {
                 receiptUrl = uploadRes.data.url;
             } else if (editingEntryId) {
                 const existing = entryType === 'expense'
-                    ? expenses.find((e: any) => e.id === editingEntryId)
-                    : revenues.find((r: any) => r.id === editingEntryId);
+                    ? transactionalData.expenses.find((e: any) => e.id === editingEntryId)
+                    : transactionalData.revenues.find((r: any) => r.id === editingEntryId);
                 receiptUrl = existing?.receiptUrl || '';
             }
 
@@ -166,6 +206,7 @@ export function FinancialPage() {
             }
 
             await reloadCondoData();
+            await fetchTransactions(); // Refresh local list
             showToast('Lançamento salvo com sucesso!', 'success');
 
             // Reset Form
@@ -245,48 +286,19 @@ export function FinancialPage() {
         }
     };
 
-    // --- Derived Data ---
-    const filteredExpenses = (expenses || [])
-        .filter((e: any) => e && e.date && typeof e.date === 'string' && e.date.startsWith(filterMonth))
-        .filter((e: any) => filterCategory === 'all' || e.category === filterCategory)
-        .filter((e: any) => !searchTerm || (e.description && e.description.toLowerCase().includes(searchTerm.toLowerCase())))
-        .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    const totalExpenses = filteredExpenses.reduce((sum: number, e: any) => sum + e.amount, 0);
-
-    // 1. Automatic Revenues from History (Virtual)
-    const historyRevenues = (virtualRevenues || [])
-        .filter((r: any) => r && r.date && typeof r.date === 'string' && r.date.startsWith(filterMonth))
-        .filter((r: any) => filterCategory === 'all' || r.category === filterCategory)
-        .map((r: any) => ({ ...r, isManual: false }));
-
-    // 2. Manual & Consolidated Revenues
-    const manualRevenues = (revenues || [])
-        .filter((r: any) => r && r.date && typeof r.date === 'string' && r.date.startsWith(filterMonth))
-        .filter((r: any) => filterCategory === 'all' || r.category === filterCategory)
-        // EXCLUDE the automated consolidated billing to avoid double counting if individual payments are shown
-        .filter((r: any) => r.description && !r.description.includes('Faturamento Gás'))
-        .map((r: any) => ({
-            ...r,
-            isManual: true
-        }));
-
-    // Combined Revenues
-    const allRevenues = [...historyRevenues, ...manualRevenues]
-        .filter((r: any) => r && (!searchTerm || (r.description && r.description.toLowerCase().includes(searchTerm.toLowerCase()))))
-        .sort((a: any, b: any) => {
-            const dateA = a.date ? new Date(a.date).getTime() : 0;
-            const dateB = b.date ? new Date(b.date).getTime() : 0;
-            return dateB - dateA;
-        });
-
-    const totalRevenues = allRevenues.reduce((sum: number, r: any) => sum + (r.amount || 0), 0);
-    const totalBankBalance = bankAccounts.filter((b: any) => b.status === 'ativa').reduce((sum: number, b: any) => sum + (b.currentBalance || 0), 0);
-    const totalBalance = (balances.cash || 0) + totalBankBalance;
-    const periodBalance = totalRevenues - totalExpenses;
-
-    // --- Chart Data Processing ---
-
-    // --- PDF Generation Helpers ---
+    // --- Actions Handlers ---
+    const handleExcluirLancamento = async (id: string, type: 'expense' | 'revenue') => {
+        if (window.confirm('Excluir este lançamento?')) {
+            try {
+                await api.delete(`/financial/${type === 'expense' ? 'expenses' : 'revenues'}/${id}`);
+                await reloadCondoData();
+                await fetchTransactions();
+                showToast('Lançamento excluído', 'success');
+            } catch (err) {
+                showToast('Erro ao excluir', 'error');
+            }
+        }
+    };
 
     // --- PDF Generation ---
 
@@ -297,13 +309,7 @@ export function FinancialPage() {
             const reference = `${month}/${year}`;
             
             await generateFinancialReport({
-                settings,
                 referenceMonth: reference,
-                expenses: filteredExpenses,
-                revenues: allRevenues,
-                categories: [...expenseCategories, ...incomeCategories],
-                bankAccounts: bankAccounts || [],
-                initialBalance: totalBalance - (totalRevenues - totalExpenses),
                 includeReceipts: true
             });
         } catch (error) {
@@ -373,24 +379,24 @@ export function FinancialPage() {
                                     metrics={[
                                         {
                                             label: "RECEITAS",
-                                            value: totalRevenues.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                                            value: kpis.totalRevenues.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                                             icon: <TrendingUp />,
                                             variant: "emerald",
                                             subtext: "Entradas Totais"
                                         },
                                         {
                                             label: "DESPESAS",
-                                            value: totalExpenses.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                                            value: kpis.totalExpenses.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                                             icon: <TrendingUp className="rotate-180" />,
                                             variant: "rose",
                                             subtext: "Saídas Gravadas"
                                         },
                                         {
                                             label: "RESULTADO",
-                                            value: periodBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                                            value: kpis.periodBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                                             icon: <DollarSign />,
-                                            variant: periodBalance >= 0 ? "indigo" : "amber",
-                                            subtext: periodBalance >= 0 ? "Superávit" : "Déficit"
+                                            variant: kpis.periodBalance >= 0 ? "indigo" : "amber",
+                                            subtext: kpis.periodBalance >= 0 ? "Superávit" : "Déficit"
                                         }
                                     ]}
                                     cols={3}
@@ -405,31 +411,29 @@ export function FinancialPage() {
                                     metrics={[
                                         {
                                             label: "RECEITAS",
-                                            value: totalRevenues.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                                            value: kpis.totalRevenues.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                                             icon: <TrendingUp />,
                                             variant: "emerald",
                                             subtext: "Entradas Totais"
                                         },
                                         {
                                             label: "DESPESAS",
-                                            value: totalExpenses.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                                            value: kpis.totalExpenses.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                                             icon: <TrendingUp className="rotate-180" />,
                                             variant: "rose",
                                             subtext: "Saídas Gravadas"
                                         },
                                         {
                                             label: "RESULTADO",
-                                            value: periodBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                                            value: kpis.periodBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                                             icon: <DollarSign />,
-                                            variant: periodBalance >= 0 ? "indigo" : "amber",
-                                            subtext: periodBalance >= 0 ? "Superávit" : "Déficit"
+                                            variant: kpis.periodBalance >= 0 ? "indigo" : "amber",
+                                            subtext: kpis.periodBalance >= 0 ? "Superávit" : "Déficit"
                                         }
                                     ]}
                                 />
                             </div>
                         </div>
-
-
 
                         {/* 2. Filter & Global Actions Section */}
                         <div className="grid grid-cols-12 gap-6 md:gap-8 md:pt-4">
@@ -524,18 +528,18 @@ export function FinancialPage() {
                                     metrics={[
                                         {
                                             label: "CAIXA INTERNO",
-                                            value: (balances.cash || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                                            value: kpis.cashBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                                             icon: <Banknote />,
                                             variant: "slate",
                                             subtext: "Dinheiro em Espécie",
                                             action: canManageFinancial ? {
                                                 icon: <Settings2 size={14} />,
-                                                onClick: () => { setEditCashValue(balances.cash.toString()); setIsEditingCash(true); }
+                                                onClick: () => { setEditCashValue(kpis.cashBalance.toString()); setIsEditingCash(true); }
                                             } : undefined
                                         },
                                         {
                                             label: "CONSOLIDADO BANCÁRIO",
-                                            value: totalBankBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                                            value: kpis.totalBankBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                                             icon: <TrendingUp />,
                                             variant: "indigo",
                                             subtext: `${bankAccounts.length} Contas Ativas`,
@@ -546,13 +550,13 @@ export function FinancialPage() {
                                         },
                                         {
                                             label: "FUNDO DE RESERVA",
-                                            value: (balances.reserve || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                                            value: kpis.reserveBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                                             icon: <Save />,
                                             variant: "amber",
                                             subtext: "Patrimônio Blindado",
                                             action: canManageFinancial ? {
                                                 icon: <Settings2 size={14} />,
-                                                onClick: () => { setEditReserveValue((balances.reserve || 0).toString()); setIsEditingReserve(true); }
+                                                onClick: () => { setEditReserveValue(kpis.reserveBalance.toString()); setIsEditingReserve(true); }
                                             } : undefined
                                         }
                                     ]}
@@ -568,18 +572,18 @@ export function FinancialPage() {
                                     metrics={[
                                         {
                                             label: "CAIXA INTERNO",
-                                            value: (balances.cash || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                                            value: kpis.cashBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                                             icon: <Banknote />,
                                             variant: "slate",
                                             subtext: "Dinheiro em Espécie",
                                             action: canManageFinancial ? {
                                                 icon: <Settings2 size={14} />,
-                                                onClick: () => { setEditCashValue(balances.cash.toString()); setIsEditingCash(true); }
+                                                onClick: () => { setEditCashValue(kpis.cashBalance.toString()); setIsEditingCash(true); }
                                             } : undefined
                                         },
                                         {
                                             label: "CONSOLIDADO BANCÁRIO",
-                                            value: totalBankBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                                            value: kpis.totalBankBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                                             icon: <TrendingUp />,
                                             variant: "indigo",
                                             subtext: `${bankAccounts.length} Contas Ativas`,
@@ -590,13 +594,13 @@ export function FinancialPage() {
                                         },
                                         {
                                             label: "FUNDO DE RESERVA",
-                                            value: (balances.reserve || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                                            value: kpis.reserveBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
                                             icon: <Save />,
                                             variant: "amber",
                                             subtext: "Patrimônio Blindado",
                                             action: canManageFinancial ? {
                                                 icon: <Settings2 size={14} />,
-                                                onClick: () => { setEditReserveValue((balances.reserve || 0).toString()); setIsEditingReserve(true); }
+                                                onClick: () => { setEditReserveValue(kpis.reserveBalance.toString()); setIsEditingReserve(true); }
                                             } : undefined
                                         }
                                     ]}
@@ -796,17 +800,7 @@ export function FinancialPage() {
                                                                             icon={<Trash2 />}
                                                                             variant="danger"
                                                                             size="sm"
-                                                                            onClick={async () => {
-                                                                                if (window.confirm('Excluir este lançamento?')) {
-                                                                                    try {
-                                                                                        await api.delete(`/financial/revenues/${revenue.id}`);
-                                                                                        await reloadCondoData();
-                                                                                        showToast('Lançamento excluído', 'success');
-                                                                                    } catch (err) {
-                                                                                        showToast('Erro ao excluir', 'error');
-                                                                                    }
-                                                                                }
-                                                                            }}
+                                                                            onClick={() => handleExcluirLancamento(revenue.id, 'revenue')}
                                                                             tooltip="Excluir Lançamento"
                                                                         />
                                                                     </>
@@ -855,17 +849,7 @@ export function FinancialPage() {
                                                                     icon={<Trash2 />}
                                                                     variant="danger"
                                                                     size="sm"
-                                                                    onClick={async () => {
-                                                                        if (window.confirm('Excluir este lançamento?')) {
-                                                                            try {
-                                                                                await api.delete(`/financial/revenues/${revenue.id}`);
-                                                                                await reloadCondoData();
-                                                                                showToast('Lançamento excluído', 'success');
-                                                                            } catch (err) {
-                                                                                showToast('Erro ao excluir', 'error');
-                                                                            }
-                                                                        }
-                                                                    }}
+                                                                    onClick={() => handleExcluirLancamento(revenue.id, 'revenue')}
                                                                     tooltip="Excluir Lançamento"
                                                                 />
                                                             </>
@@ -887,7 +871,7 @@ export function FinancialPage() {
                                     <div className="bg-emerald-50/30 border-t border-emerald-100 p-4 flex justify-between items-center px-6">
                                         <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Subtotal Receitas</span>
                                         <span className="text-lg font-bold text-emerald-700">
-                                            {totalRevenues.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                            {kpis.totalRevenues.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                         </span>
                                     </div>
                                 )}
@@ -951,17 +935,7 @@ export function FinancialPage() {
                                                                             icon={<Trash2 />}
                                                                             variant="danger"
                                                                             size="sm"
-                                                                            onClick={async () => {
-                                                                                if (window.confirm('Excluir este lançamento?')) {
-                                                                                    try {
-                                                                                        await api.delete(`/financial/expenses/${expense.id}`);
-                                                                                        await reloadCondoData();
-                                                                                        showToast('Lançamento excluído', 'success');
-                                                                                    } catch (err) {
-                                                                                        showToast('Erro ao excluir', 'error');
-                                                                                    }
-                                                                                }
-                                                                            }}
+                                                                            onClick={() => handleExcluirLancamento(expense.id, 'expense')}
                                                                             tooltip="Excluir Lançamento"
                                                                         />
                                                                     </>
@@ -1007,17 +981,7 @@ export function FinancialPage() {
                                                                     icon={<Trash2 />}
                                                                     variant="danger"
                                                                     size="sm"
-                                                                    onClick={async () => {
-                                                                        if (window.confirm('Excluir este lançamento?')) {
-                                                                            try {
-                                                                                await api.delete(`/financial/expenses/${expense.id}`);
-                                                                                await reloadCondoData();
-                                                                                showToast('Lançamento excluído', 'success');
-                                                                            } catch (err) {
-                                                                                showToast('Erro ao excluir', 'error');
-                                                                            }
-                                                                        }
-                                                                    }}
+                                                                    onClick={() => handleExcluirLancamento(expense.id, 'expense')}
                                                                     tooltip="Excluir Lançamento"
                                                                 />
                                                             </>
@@ -1037,7 +1001,7 @@ export function FinancialPage() {
                                     <div className="bg-rose-50/30 border-t border-rose-100 p-4 flex justify-between items-center px-6">
                                         <span className="text-[10px] font-black text-rose-600 uppercase tracking-widest">Subtotal Despesas</span>
                                         <span className="text-lg font-bold text-rose-700">
-                                            {totalExpenses.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                            {kpis.totalExpenses.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                         </span>
                                     </div>
                                 )}
@@ -1050,18 +1014,18 @@ export function FinancialPage() {
                                     <div className="flex flex-col md:flex-row md:items-center gap-8 md:gap-16">
                                         <div className="flex flex-col">
                                             <span className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-2 opacity-60">Receitas Período</span>
-                                            <span className="text-2xl font-bold text-emerald-400 tracking-tight">{totalRevenues.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                                            <span className="text-2xl font-bold text-emerald-400 tracking-tight">{kpis.totalRevenues.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
                                         </div>
                                         <div className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-slate-800 text-slate-500 font-black border border-slate-700/50 shadow-inner"> - </div>
                                         <div className="flex flex-col">
                                             <span className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-2 opacity-60">Despesas Período</span>
-                                            <span className="text-2xl font-bold text-rose-400 tracking-tight">{totalExpenses.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                                            <span className="text-2xl font-bold text-rose-400 tracking-tight">{kpis.totalExpenses.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
                                         </div>
                                     </div>
                                     <div className="md:text-right pt-8 md:pt-0 border-t md:border-t-0 border-slate-800 flex flex-col">
                                         <span className="text-[10px] text-indigo-400 uppercase font-black tracking-[0.2em] mb-2">Resultado Líquido do Mês</span>
-                                        <span className={`text-5xl font-bold tracking-tighter ${periodBalance >= 0 ? 'text-white' : 'text-orange-400'}`}>
-                                            {periodBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                        <span className={`text-5xl font-bold tracking-tighter ${kpis.periodBalance >= 0 ? 'text-white' : 'text-orange-400'}`}>
+                                            {kpis.periodBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                         </span>
                                     </div>
                                 </div>
@@ -1103,42 +1067,6 @@ export function FinancialPage() {
                                         } catch (err) {
                                             showToast('Erro ao atualizar saldo em caixa', 'error');
                                         }
-                                    }}
-                                    variant="primary"
-                                    className="flex-1"
-                                >
-                                    SALVAR
-                                </HabitaButton>
-                            </div>
-                        </div>
-                    </HabitaModal>
-
-                    <HabitaModal
-                        isOpen={isEditingBank}
-                        onClose={() => setIsEditingBank(false)}
-                        title="Ajustar Saldo em Banco"
-                    >
-                        <div className="space-y-4">
-                            <HabitaInput
-                                label="Novo Valor (R$)"
-                                type="number"
-                                step="0.01"
-                                value={editBankValue}
-                                onChange={(e: any) => setEditBankValue(e.target.value)}
-                                className="font-bold"
-                            />
-                            <div className="flex gap-3 mt-6">
-                                <HabitaButton onClick={() => setIsEditingBank(false)} variant="outline" className="flex-1">
-                                    CANCELAR
-                                </HabitaButton>
-                                <HabitaButton
-                                    onClick={() => {
-                                        // This modal is now deprecated for individual bank accounts,
-                                        // but keeping the logic for a single 'bank' balance if it still exists.
-                                        // For multi-bank, the bank details modal would be used to adjust individual accounts.
-                                        // updateBalances({ ...balances, bank: val }); // Original call, now commented out as per instruction context
-                                        setIsEditingBank(false);
-                                        showToast('Ajuste de saldo bancário individual não suportado aqui. Use o detalhamento de contas.', 'info');
                                     }}
                                     variant="primary"
                                     className="flex-1"

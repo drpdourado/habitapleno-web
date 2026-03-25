@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useToast } from '../contexts/ToastContext';
 import { User, Mail, ShieldCheck, LogOut, Key, Fingerprint, Edit2, Check, X, Lock, Phone, Eye, EyeOff } from 'lucide-react';
@@ -15,6 +16,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 const ProfilePage = () => {
     const { user, profile, isAdmin, signOut, resetPassword } = useAuth();
+    const navigate = useNavigate();
 
 
 
@@ -399,7 +401,12 @@ const ProfilePage = () => {
                 footer={
                     <div className="flex gap-3 w-full">
                         <HabitaButton variant="outline" onClick={() => setShowSignOutConfirm(false)} className="flex-1">Cancelar</HabitaButton>
-                        <HabitaButton variant="danger" onClick={() => { signOut(); setShowSignOutConfirm(false); }} className="flex-1">Confirmar Saída</HabitaButton>
+                        <HabitaButton variant="danger" onClick={async () => {
+                            await api.post('/auth/logout').catch(() => {});
+                            signOut();
+                            setShowSignOutConfirm(false);
+                            navigate('/login');
+                        }} className="flex-1">Confirmar Saída</HabitaButton>
                     </div>
                 }
             >

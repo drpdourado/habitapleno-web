@@ -5,12 +5,12 @@ import {
     Clock, CheckCircle, XCircle,
     CalendarClock, Info, Sparkles, Target
 } from 'lucide-react';
-import { fetchAllFirestoreUsers } from '../utils/FirebaseUtils';
+
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useApp, type Area, type Reserva } from '../contexts/AppContext';
 import { hasPermission } from '../utils/rbac';
-import { useNotifications } from '../contexts/NotificationContext';
+
 import { clsx } from 'clsx';
 
 // Habita Design System
@@ -32,7 +32,6 @@ export function AreasAdminPage() {
     const { isAdmin, accessProfile } = useAuth();
     const canManage = isAdmin || hasPermission(accessProfile, 'areas', 'all');
     const { showToast } = useToast();
-    const { sendNotification } = useNotifications();
     const { areas, addArea, updateArea, deleteArea, reservas, updateReserva } = useApp();
 
     // UI state
@@ -153,26 +152,7 @@ export function AreasAdminPage() {
         try {
             await updateReserva({ ...res, status: 'confirmada' });
 
-            // Send notification to the unit residents
-            try {
-                const users = await fetchAllFirestoreUsers();
-                const residents = users.filter((u: any) => u.unitId === res.unitId);
-                const areaName = getAreaName(res.areaId);
-
-                await Promise.all(residents.map((resident: any) =>
-                    sendNotification({
-                        userId: resident.uid,
-                        title: 'Reserva Aprovada!',
-                        message: `Sua solicitação de reserva para "${areaName}" foi aprovada pelo síndico.`,
-                        type: 'success',
-                        link: '/reservas' // Default resident booking page
-                    })
-                ));
-            } catch (err) {
-                console.error("Erro ao notificar usuário:", err);
-            }
-
-            showToast(`Reserva da unidade ${res.unitId} aprovada!`, 'success');
+            showToast(`Reserva da unidade ${res.unitId} aprovada! Os moradores serão notificados.`, 'success');
         } catch (error) {
             showToast('Erro ao aprovar reserva.', 'error');
         }
@@ -192,26 +172,7 @@ export function AreasAdminPage() {
                 justificativa: rejectionJustification
             });
 
-            // Send notification to the unit residents
-            try {
-                const users = await fetchAllFirestoreUsers();
-                const residents = users.filter((u: any) => u.unitId === reservaToReject.unitId);
-                const areaName = getAreaName(reservaToReject.areaId);
-
-                await Promise.all(residents.map((resident: any) =>
-                    sendNotification({
-                        userId: resident.uid,
-                        title: 'Reserva Rejeitada',
-                        message: `Sua solicitação de reserva para "${areaName}" foi rejeitada. Motivo: ${rejectionJustification}`,
-                        type: 'error',
-                        link: '/reservas'
-                    })
-                ));
-            } catch (err) {
-                console.error("Erro ao notificar usuário:", err);
-            }
-
-            showToast(`Reserva da unidade ${reservaToReject.unitId} rejeitada.`, 'info');
+            showToast(`Reserva da unidade ${reservaToReject.unitId} rejeitada. O morador será notificado.`, 'info');
             setReservaToReject(null);
             setRejectionJustification('');
         } catch (error) {

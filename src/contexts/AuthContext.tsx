@@ -142,11 +142,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = () => {
-    localStorage.removeItem('@HabitaPleno:token');
-    localStorage.removeItem('@HabitaPleno:activeCondoId');
-    localStorage.removeItem('@HabitaPleno:user');
+    localStorage.clear();
+    sessionStorage.clear();
     setUser(null);
-    window.location.href = '/login';
+    // Navegação: cada chamador deve usar useNavigate() após chamar signOut()
+    // O PrivateRoute redireciona automaticamente quando user === null
   };
 
   const resetPassword = async (email: string) => {

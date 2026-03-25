@@ -63,9 +63,27 @@ export const generateDelinquencyReport = async () => {
   }
 };
 
+export const generateOcorrenciasReport = async () => {
+  try {
+    const response = await api.post('/financial/generate-ocorrencias-report', {}, { responseType: 'blob' });
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `relatorio_operacional.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error("Erro ao gerar Relatório Operacional:", error);
+    alert("Falha ao gerar o relatório operacional em PDF.");
+  }
+};
+
 export default {
   generateMonthlyReport,
   generateFinancialReport,
   generateGasReport,
-  generateDelinquencyReport
+  generateDelinquencyReport,
+  generateOcorrenciasReport
 };

@@ -9,8 +9,6 @@ import { clsx, type ClassValue } from 'clsx';
 import { useApp, type Area, type Reserva } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { useNotifications } from '../contexts/NotificationContext';
-import { fetchAllFirestoreUsers } from '../utils/FirebaseUtils';
 
 // Habita Design System
 import { HabitaButton } from '../components/ui/HabitaButton';
@@ -33,7 +31,6 @@ export function BookingPage() {
     const { areas, reservas, addReserva, updateReserva, isLoading } = useApp();
     const { profile, user } = useAuth();
     const { showToast } = useToast();
-    const { sendNotification } = useNotifications();
 
     // UI state
     const [activeTab, setActiveTab] = useState<Tab>('agendar');
@@ -148,23 +145,7 @@ export function BookingPage() {
 
             await addReserva(novaReserva);
 
-            // Notify admins/sindico
-            try {
-                const users = await fetchAllFirestoreUsers();
-                const admins = users.filter(u => u.role === 'admin' || (u.role as string) === 'sindico');
 
-                await Promise.all(admins.map(admin =>
-                    sendNotification({
-                        userId: admin.uid,
-                        title: 'Nova Solicitação de Reserva',
-                        message: `A unidade ${userUnitId} solicitou o espaço "${selectedArea.nome}".`,
-                        type: 'info',
-                        link: '/reservas/areas'
-                    })
-                ));
-            } catch (err) {
-                console.error("Erro ao notificar administradores:", err);
-            }
 
             showToast('Solicitação de reserva enviada com sucesso!', 'success');
             setIsBookingModalOpen(false);

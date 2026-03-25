@@ -270,7 +270,7 @@ const DashboardPage = () => {
         await reloadCondoData();
     };
 
-    const calculateRecordTotal = (record: any, unit: any) => {
+    const calculateRecordTotal = (unit: any) => {
         if (!unit) return 0;
         return unit.calculatedTotal || unit.amountPaid || 0;
     };
@@ -1800,7 +1800,7 @@ const DashboardPage = () => {
                                             <QRCodeSVG
                                                 value={generatePixPayload(
                                                     settings.pixKey || '',
-                                                    calculateRecordTotal(selectedRecordForPix, selectedUnitForPix),
+                                                    calculateRecordTotal(selectedUnitForPix),
                                                     settings.condoName || 'HabitaPleno'
                                                 )}
                                                 size={200}
@@ -1812,7 +1812,7 @@ const DashboardPage = () => {
                                         <div className="text-center w-full">
                                             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Valor do Boleto</div>
                                             <div className="text-2xl font-black text-slate-800">
-                                                {calculateRecordTotal(selectedRecordForPix, selectedUnitForPix).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                                {calculateRecordTotal(selectedUnitForPix).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                             </div>
                                             <div className="text-[10px] font-bold text-indigo-600 bg-indigo-50 inline-block px-2 py-0.5 rounded-full mt-1 uppercase tracking-tight">
                                                 Competência {selectedRecordForPix.referenceMonth}
@@ -1824,7 +1824,7 @@ const DashboardPage = () => {
                                                 onClick={() => {
                                                     const payload = generatePixPayload(
                                                         settings.pixKey || '',
-                                                        calculateRecordTotal(selectedRecordForPix, selectedUnitForPix),
+                                                        calculateRecordTotal(selectedUnitForPix),
                                                         settings.condoName || 'HabitaPleno'
                                                     );
                                                     navigator.clipboard.writeText(payload);
@@ -1879,8 +1879,9 @@ const DashboardPage = () => {
                                                     <div className="flex gap-3 w-full">
                                                         <HabitaButton variant="outline" onClick={() => setIsLogoutConfirmOpen(false)} className="flex-1 h-11 text-[10px] uppercase font-black">Manter</HabitaButton>
                                                         <HabitaButton variant="danger" onClick={async () => {
-                                                            await authSignOut?.();
-                                                            window.location.href = '/login';
+                                                            await api.post('/auth/logout').catch(() => {});
+                                                            authSignOut?.();
+                                                            navigate('/login');
                                                         }} className="flex-1 h-11 text-[10px] uppercase font-black bg-rose-600 border-rose-600">Sair Agora</HabitaButton>
                                                     </div>
                                                 }

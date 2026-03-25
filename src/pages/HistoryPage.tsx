@@ -113,9 +113,10 @@ const HistoryPage = () => {
                         <HabitaTBody>
                             {filteredHistory.map((record) => {
                                 const canSeeAll = hasPermission(accessProfile, 'history', 'all');
+                                const units = record.units || [];
                                 const visibleUnits = canSeeAll
-                                    ? record.units
-                                    : record.units.filter(u => u.id === profile?.unitId);
+                                    ? units
+                                    : units.filter(u => u.id === profile?.unitId);
 
                                 const totalCollected = visibleUnits.reduce((acc, unit) => {
                                     return acc + (unit.calculatedTotal || 0);
@@ -132,7 +133,7 @@ const HistoryPage = () => {
                                                     {record.referenceMonth}
                                                 </div>
                                                 <div className="flex items-center gap-2 md:hidden">
-                                                    <span className="text-[9px] font-bold text-slate-400 uppercase">{formatDate(record.closedAt)}</span>
+                                                    <span className="text-[9px] font-bold text-slate-400 uppercase">{record.closedAt ? formatDate(record.closedAt) : '—'}</span>
                                                     {isClosed ? (
                                                         <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
                                                     ) : (
@@ -143,7 +144,7 @@ const HistoryPage = () => {
                                         </HabitaTD>
                                         
                                         <HabitaTD label="Data da Apuração" className="hidden md:table-cell font-medium text-slate-500 text-xs">
-                                            {formatDate(record.closedAt)}
+                                            {record.closedAt ? formatDate(record.closedAt) : '—'}
                                         </HabitaTD>
                                         
                                         <HabitaTD label="Unidades" className="hidden md:table-cell">

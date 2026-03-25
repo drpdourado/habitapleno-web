@@ -135,7 +135,7 @@ const MobileReading = () => {
                                     if (prevM < 1) { prevM = 12; prevY--; }
                                     const prevRef = `${prevM.toString().padStart(2, '0')}/${prevY}`;
                                     const prevRecord = history.find(h => h.referenceMonth === prevRef);
-                                    if (prevRecord) {
+                                    if (prevRecord && prevRecord.units) {
                                         const u = prevRecord.units.find(idx => idx.id === unit.id);
                                         return u ? u.currentGasReading : 0;
                                     }
@@ -189,8 +189,8 @@ const UnitReadingCard = ({ unit, history, onSave, canEdit, settings, previousRea
     // Calculate last 3 months average consumption
     const averageConsumption = useMemo(() => {
         const unitHistory = history
-            .map(h => h.units.find((u: any) => u.id === unit.id))
-            .filter(Boolean)
+            .map(h => (h.units || []).find((u: any) => u.id === unit.id))
+            .filter((u): u is any => !!u)
             .slice(0, 3);
 
         if (unitHistory.length === 0) return null;

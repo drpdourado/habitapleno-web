@@ -26,8 +26,6 @@ import { HabitaCombobox } from '../components/ui/HabitaCombobox';
 import { HabitaIconActionButton } from '../components/ui/HabitaIconActionButton';
 import { HabitaFileUpload } from '../components/ui/HabitaFileUpload';
 import { HabitaSpinner } from '../components/ui/HabitaSpinner';
-import { notificationService } from '../services/NotificationService';
-import { systemService } from '../services/SystemService';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -84,7 +82,7 @@ export function OcorrenciasPage() {
             setFormData({
                 titulo: oc.titulo,
                 categoria: oc.categoria,
-                prioridade: oc.prioridade,
+                prioridade: (oc.prioridade as any) || 'Média',
                 descricao: oc.descricao
             });
             setPhotoPreview(oc.photoUrl || null);
@@ -157,37 +155,7 @@ export function OcorrenciasPage() {
                 };
                 await addOcorrencia(NovaOcorrencia);
                 
-                // --- TRIGGER NOTIFICATIONS FOR ADMINS ---
-                (async () => {
-                    try {
-                        const usersResponse = await systemService.fetchAllUsers();
-                        if (usersResponse.success && usersResponse.data) {
-                            // Filter admins for this specific condo
-                            const adminIds = usersResponse.data
-                                .filter((u: any) => {
-                                    // Check root role or specific vinculo for this condo
-                                    const hasAdminRole = u.role === 'admin';
-                                    const hasAdminVinculo = u.vinculos?.some((v: any) => v.condominiumId === tenantId && v.role === 'admin');
-                                    return hasAdminRole || hasAdminVinculo;
-                                })
-                                .map((u: any) => u.uid);
-
-                            if (adminIds.length > 0) {
-                                await notificationService.sendBulkNotifications(
-                                    adminIds,
-                                    '🚨 Nova Ocorrência Registrada!',
-                                    `Uma nova ocorrência (${NovaOcorrencia.titulo}) foi aberta para a unidade ${NovaOcorrencia.unitId}. Verifique os detalhes.`,
-                                    tenantId,
-                                    { type: 'warning', link: '/ocorrencias' }
-                                );
-                            }
-                        }
-                    } catch (notifErr) {
-                        console.error('Falha silenciosa ao enviar notificações:', notifErr);
-                    }
-                })();
-
-                showToast('Ocorrência registrada! O síndico foi notificado.', 'success');
+                showToast('Ocorrência registrada! O síndico será notificado.', 'success');
             }
             setIsModalOpen(false);
         } catch (error) {
@@ -338,7 +306,7 @@ export function OcorrenciasPage() {
                                         size="xs"
                                         className="gap-1"
                                     >
-                                        {getPriorityIcon(oc.prioridade)} {(oc.prioridade || '').toUpperCase()}
+                                        {getPriorityIcon(oc.prioridade || 'Baixa')} {(oc.prioridade || '').toUpperCase()}
                                     </HabitaBadge>
                                 </div>
                                 
@@ -557,7 +525,7 @@ export function OcorrenciasPage() {
                             <HabitaBadge 
                                 variant={isDetailOpen.prioridade === 'Alta' ? 'error' : isDetailOpen.prioridade === 'Média' ? 'warning' : 'success'}
                             >
-                                {isDetailOpen.prioridade.toUpperCase()}
+                                {(isDetailOpen.prioridade || 'Baixa').toUpperCase()}
                             </HabitaBadge>
                             <HabitaBadge variant="neutral">
                                 {isDetailOpen.categoria.toUpperCase()}

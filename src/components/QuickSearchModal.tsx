@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, Users, Smartphone, Building, X, ArrowRight, SearchCheck, Car } from 'lucide-react';
+import { systemService } from '../services/SystemService';
+import { type UserProfile } from '../utils/FirebaseUtils';
 import { useApp } from '../contexts/AppContext';
-import { fetchAllFirestoreUsers, type UserProfile, currentCondominiumId } from '../utils/FirebaseUtils';
+import { currentCondominiumId } from '../utils/FirebaseUtils';
 import { clsx } from 'clsx';
 
 interface QuickSearchModalProps {
@@ -38,8 +40,10 @@ export const QuickSearchModal: React.FC<QuickSearchModalProps> = ({ isOpen, onCl
         if (isOpen) {
             const loadData = async () => {
                 try {
-                    const users = await fetchAllFirestoreUsers();
-                    setAllUsers(users);
+                    const res = await systemService.fetchAllUsers();
+                    if (res.success && res.data) {
+                        setAllUsers(res.data);
+                    }
                 } catch (err) {
                     console.error("Erro ao carregar usuários para busca rápida:", err);
                 }
