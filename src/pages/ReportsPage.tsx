@@ -462,7 +462,7 @@ export const ReportsPage = () => {
                                                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 text-center">Evolução da Inadimplência por Mês</h3>
                                                 <div className="h-[300px] w-full relative">
                                                     {inadimplenciaStats.chartData.length > 0 ? (
-                                                        <ResponsiveContainer width="99%" height="100%">
+                                                        <ResponsiveContainer width="100%" height={300} minWidth={0}>
                                                             <BarChart data={inadimplenciaStats.chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                                                 <XAxis dataKey="name" fontSize={10} fontWeight="800" axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />
@@ -590,7 +590,7 @@ export const ReportsPage = () => {
                                                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 text-center">Fluxo Histórico (Entradas vs Saídas)</h3>
                                                 <div className="h-[280px] w-full relative">
                                                     { (fluxoDeCaixaStats.stackedChartData || []).length > 0 ? (
-                                                        <ResponsiveContainer width="99%" height="100%">
+                                                        <ResponsiveContainer width="100%" height={280} minWidth={0}>
                                                             <BarChart data={fluxoDeCaixaStats.stackedChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                                                 <XAxis dataKey="name" fontSize={10} fontWeight="800" axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} minTickGap={15} />
@@ -610,7 +610,7 @@ export const ReportsPage = () => {
                                                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 text-center">Distribuição de Saídas por Categoria</h3>
                                                 <div className="h-[400px] md:h-[280px] w-full relative">
                                                     { (fluxoDeCaixaStats.pieData || []).length > 0 ? (
-                                                        <ResponsiveContainer width="99%" height="100%">
+                                                        <ResponsiveContainer width="100%" height={280} minWidth={0}>
                                                             <PieChart>
                                                                 <Pie
                                                                     data={fluxoDeCaixaStats.pieData}
@@ -838,7 +838,7 @@ export const ReportsPage = () => {
                                     <div className="p-4 md:p-6">
                                         <div className="w-full h-[300px] min-w-0 border border-slate-100 rounded-2xl p-6 bg-slate-50/30 relative">
                                             {consumoStats.chartData.length > 0 ? (
-                                                <ResponsiveContainer width="99%" height="100%">
+                                                <ResponsiveContainer width="100%" height={300} minWidth={0}>
                                                     <LineChart data={consumoStats.chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                                         <XAxis dataKey="name" fontSize={10} fontWeight="800" axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />
@@ -1018,7 +1018,7 @@ export const ReportsPage = () => {
                                         <div className="p-4 md:p-6">
                                             <div className="h-[280px] w-full relative min-w-0">
                                                 {ocorrenciasStats.total > 0 ? (
-                                                    <ResponsiveContainer width="99%" height="100%">
+                                                    <ResponsiveContainer width="100%" height={280} minWidth={0}>
                                                         <PieChart>
                                                             <Pie
                                                                 data={ocorrenciasStats.statusData}
@@ -1062,7 +1062,7 @@ export const ReportsPage = () => {
                                         <div className="p-4 md:p-6">
                                             <div className="h-[280px] w-full min-w-0 relative">
                                                 { (ocorrenciasStats.categoryData || []).length > 0 ? (
-                                                    <ResponsiveContainer width="99%" height="100%">
+                                                    <ResponsiveContainer width="100%" height={280} minWidth={0}>
                                                         <BarChart data={ocorrenciasStats.categoryData} layout="vertical" margin={{ left: 20, right: 20 }}>
                                                             <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
                                                             <XAxis type="number" hide />

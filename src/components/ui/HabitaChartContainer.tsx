@@ -46,7 +46,7 @@ export const HabitaChartContainer: React.FC<HabitaChartContainerProps> = ({
         )}
       </div>
 
-      <div className="w-full min-h-[300px] h-full flex flex-col relative min-w-0">
+      <div className="w-full flex flex-col relative min-w-0 overflow-hidden">
         {children}
       </div>
     </div>

@@ -144,9 +144,10 @@ const DashboardPage = () => {
     const fetchDashboardData = useCallback(async (selectedMonth?: string) => {
         setIsLoading(true);
         try {
+            const unitParam = profile?.unitId ? `&unitId=${profile.unitId}` : '';
             const summaryUrl = selectedMonth 
-                ? `/condo/dashboard-summary?month=${encodeURIComponent(selectedMonth)}` 
-                : '/condo/dashboard-summary';
+                ? `/condo/dashboard-summary?month=${encodeURIComponent(selectedMonth)}${unitParam}` 
+                : `/condo/dashboard-summary${unitParam ? '?' + unitParam.substring(1) : ''}`;
 
             const [syncRes, summaryRes] = await Promise.all([
                 api.get('/condo/sync'),
@@ -168,12 +169,6 @@ const DashboardPage = () => {
                 s.condoName === 'Condomínio não encontrado'
             );
 
-            console.log("[Dashboard] Sync Data:", { 
-                hasSettings: !!s, 
-                condoName: s?.condoName, 
-                isAdmin, 
-                isSetupNeeded 
-            });
 
             if (isSetupNeeded) {
                 setIsOnboardingOpen(true);
@@ -420,13 +415,6 @@ const DashboardPage = () => {
     };
 
 
-    const parseGasVal = (val: any) => {
-        if (!val && val !== 0) return 0;
-        if (typeof val === 'number') return val;
-        const parsed = Number(String(val).replace(',', '.'));
-        return isNaN(parsed) ? 0 : parsed;
-    };
-
     const monthOptions = useMemo(() => {
         const sortedHistory = [...history].sort((a: any, b: any) => {
             if (!a.referenceMonth || !b.referenceMonth) return 0;
@@ -532,47 +520,16 @@ const DashboardPage = () => {
         });
     }, [allUnits, currentRecord, detailsType]);
 
+    // Chart Data (Now provided by API)
     const chartData = useMemo(() => {
-        const sortedHistory = [...history].sort((a: HistoryRecord, b: HistoryRecord) => {
-            const [mA, yA] = (a.referenceMonth || '').split('/');
-            const [mB, yB] = (b.referenceMonth || '').split('/');
-            return new Date(Number(yA || 0), Number(mA || 1) - 1).getTime() - new Date(Number(yB || 0), Number(mB || 1) - 1).getTime();
-        });
-        const last6 = sortedHistory.slice(-6);
-        return last6.map((record: HistoryRecord) => {
-            const total = record.units.reduce((sum: number, unit: Unit) => {
-                const current = parseGasVal(unit?.currentGasReading);
-                const last = parseGasVal(unit?.lastGasReading);
-                return sum + Math.max(0, current - last);
-            }, 0);
-            return {
-                name: record.referenceMonth,
-                consumo: total
-            };
-        });
-    }, [history]);
+        return summary?.globalConsumptionChart || [];
+    }, [summary]);
 
 
     // Chart Data Generation (Last 6 months) - Per Unit (for Residents)
     const userChartData = useMemo(() => {
-        if (!profile?.unitId) return [];
-        const sortedHistory = [...history].sort((a: HistoryRecord, b: HistoryRecord) => {
-            const [mA, yA] = (a.referenceMonth || '').split('/');
-            const [mB, yB] = (b.referenceMonth || '').split('/');
-            return new Date(Number(yA || 0), Number(mA || 1) - 1).getTime() - new Date(Number(yB || 0), Number(mB || 1) - 1).getTime();
-        });
-        const last6 = sortedHistory.slice(-6);
-        return last6.map((record: HistoryRecord) => {
-            const myUnit = record.units.find((u: Unit) => String(u.id).trim() === String(profile.unitId).trim());
-            const current = parseGasVal(myUnit?.currentGasReading);
-            const last = parseGasVal(myUnit?.lastGasReading);
-            const consumption = myUnit ? Math.max(0, current - last) : 0;
-            return {
-                name: record.referenceMonth,
-                consumo: consumption
-            };
-        });
-    }, [history, profile?.unitId]);
+        return summary?.userConsumptionChart || [];
+    }, [summary]);
 
     // Calculate all overdue months for the resident's unit
     // Calculate overdue vs open months for the resident's unit
@@ -1167,7 +1124,7 @@ const DashboardPage = () => {
                                     >
                                         <div className="flex flex-col md:flex-row items-start md:items-end gap-6 md:gap-8">
                                             <div className="h-[220px] w-full min-w-0">
-                                                <ResponsiveContainer width="100%" height="100%">
+                                                <ResponsiveContainer width="100%" height={220} minWidth={0}>
                                                     <BarChart data={userChartData}>
                                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                                                         <XAxis
@@ -1376,7 +1333,7 @@ const DashboardPage = () => {
                                                         </div>
                                                     ) : (
                                                         <div className="h-[140px] w-[140px] shrink-0 min-w-0">
-                                                            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                                                            <ResponsiveContainer width={140} height={140} minWidth={0}>
                                                                 <PieChart>
                                                                     <Pie
                                                                         data={[
@@ -1431,7 +1388,7 @@ const DashboardPage = () => {
                                     <HabitaChartContainer
                                         title="Consumo Global"
                                         subtitle={`Referência: ${activeRefMonth}`}
-                                        className="border-slate-200 shadow-none hover:shadow-md transition-shadow order-10"
+                                        className="border-slate-200 shadow-none hover:shadow-md transition-shadow order-10 lg:col-span-2"
                                         legend={[{ label: 'Consumo (m³)', color: '#6366f1' }]}
                                         extra={stats.pendingReadings > 0 && (
                                             <button
@@ -1448,7 +1405,7 @@ const DashboardPage = () => {
                                         )}
                                     >
                                         <div className="h-[300px] w-full min-w-0">
-                                            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                                            <ResponsiveContainer width="100%" height={300} minWidth={0}>
                                                 <BarChart data={chartData}>
                                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} dy={10} />
