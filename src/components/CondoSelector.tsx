@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import { Building2, LogOut } from 'lucide-react';
 import { HabitaSpinner } from './ui/HabitaSpinner';
+import { useApp } from '../contexts/AppContext';
 
 interface CondoInfo {
     id: string;
@@ -12,12 +13,13 @@ interface CondoInfo {
 }
 
 export const CondoSelector: React.FC = () => {
-    // Auth context - fallback for cleaning
-    const { pendingVinculos, switchVinculo, signOut } = (window as any).authContext || {
-        pendingVinculos: [],
-        switchVinculo: (_i: number) => {},
+    const { switchTenant } = useApp();
+    const { user, signOut } = (window as any).authContext || {
+        user: null,
         signOut: () => {}
     };
+
+    const pendingVinculos = user?.vinculos || [];
 
     const [condos, setCondos] = useState<(CondoInfo & { vinculoIndex: number })[]>([]);
     const [loading, setLoading] = useState(true);
@@ -66,8 +68,8 @@ export const CondoSelector: React.FC = () => {
         fetchCondos();
     }, [pendingVinculos]);
 
-    const handleSelect = (index: number) => {
-        switchVinculo(index);
+    const handleSelect = (vinculo: any) => {
+        switchTenant(vinculo.condominiumId);
     };
 
     return (
@@ -90,10 +92,10 @@ export const CondoSelector: React.FC = () => {
                     </div>
                 ) : (
                     <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
-                        {condos.map((c) => (
+                        {condos.map((c, idx) => (
                             <button
-                                key={c.vinculoIndex}
-                                onClick={() => handleSelect(c.vinculoIndex)}
+                                key={idx}
+                                onClick={() => handleSelect(pendingVinculos[c.vinculoIndex])}
                                 className="w-full bg-slate-50 hover:bg-emerald-50 text-left px-5 py-4 border border-slate-200 hover:border-emerald-200 rounded transition-all group flex items-start gap-3 active:scale-[0.98] shadow-sm"
                             >
                                 <div className="mt-1 w-8 h-8 rounded bg-white flex items-center justify-center shadow-sm text-slate-400 group-hover:text-emerald-500 border border-slate-100 transition-colors">

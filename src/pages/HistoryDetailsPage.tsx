@@ -1,14 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useApp, type HistoryRecord, type Unit } from '../contexts/AppContext.tsx';
-import { useAuth } from '../contexts/AuthContext.tsx';
-import { Save, ArrowLeft, Trash2, MessageCircle, Pencil, X, Check, FileSpreadsheet, Copy, Download, Calendar, FileText, Lock, RefreshCw, AlertTriangle, Search, Building, DollarSign } from 'lucide-react';
-import { generatePixPayload } from '../utils/PixUtils.ts';
+import { useApp, type HistoryRecord, type Unit } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
+import { Save, ArrowLeft, Trash2, MessageCircle, Pencil, X, Check, FileSpreadsheet, Copy, Download, Calendar, FileText, Lock, RefreshCw, AlertTriangle, Search, Building, DollarSign, Info } from 'lucide-react';
+import { calcularEncargos, formatCurrency } from '../utils/FinanceUtils';
+import { generatePixPayload } from '../utils/PixUtils';
 import { QRCodeSVG } from 'qrcode.react';
-import { generateReceiptPDF } from '../utils/ReceiptGenerator.ts';
-import { generateGasReport } from '../utils/PDFReportUtils.ts';
-import { hasPermission } from '../utils/rbac.ts';
-import { useToast } from '../contexts/ToastContext.ts';
+import { generateReceiptPDF } from '../utils/ReceiptGenerator';
+import { generateGasReport } from '../utils/PDFReportUtils';
+import { hasPermission } from '../utils/rbac';
+import { useToast } from '../contexts/ToastContext';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -17,6 +18,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 import { HabitaCard } from '../components/ui/HabitaCard';
+import { HabitaTooltip } from '../components/ui/HabitaTooltip';
 import { HabitaButton } from '../components/ui/HabitaButton';
 import { HabitaTable, HabitaTHead, HabitaTBody, HabitaTR, HabitaTH, HabitaTD } from '../components/ui/HabitaTable';
 import { HabitaHeading } from '../components/ui/HabitaHeading';
@@ -224,10 +226,6 @@ const HistoryDetailsPage = () => {
         updateHistoryRecord(updated.id, updated);
         showToast('Sincronizado com as configurações atuais!', 'success');
         setIsSyncModalOpen(false);
-    };
-
-    const formatCurrency = (val: number) => {
-        return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     };
 
     const generateWhatsAppText = (unit: Unit) => {
@@ -509,6 +507,16 @@ Total................... ${formatCurrency(total).replace('R$', 'R$ ')}`;
                                     return sum + fv;
                                 }, 0);
                                 const total = unit.calculatedTotal || (fixedFee + value + extraFeesTotal);
+                                
+                                // Calcular encargos se estiver em atraso e não pago
+                                const statusValue = unit.status || 'pendente';
+                                const isPaid = statusValue === 'pago' || !!unit.paymentDate;
+                                
+                                const encargos = !isPaid 
+                                    ? calcularEncargos(total, r.dueDate, settings)
+                                    : { valorOriginal: total, multa: 0, juros: 0, total: total, diasAtraso: 0 };
+
+                                const isOverdue = encargos.diasAtraso > 0;
                                 const isLower = unit.currentGasReading < unit.lastGasReading;
                                 const cleanUnitId = unit.block && unit.id.toUpperCase().endsWith(`-${unit.block.toUpperCase()}`)
                                     ? unit.id.slice(0, -(unit.block.length + 1))
@@ -525,8 +533,43 @@ Total................... ${formatCurrency(total).replace('R$', 'R$ ')}`;
                                                         <span className="font-medium text-slate-700 text-sm leading-tight tracking-tight">{cleanUnitId} - {unit.block || '—'}</span>
                                                         <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{unit.ownerName || '—'}</span>
                                                     </div>
-                                                    <div className="text-right">
-                                                        <span className="text-sm font-bold text-slate-900">{formatCurrency(total)}</span>
+                                                    <div className="text-right flex flex-col items-end">
+                                                        <span className={cn("text-sm font-bold", isOverdue ? "text-rose-600" : "text-slate-900")}>
+                                                            {formatCurrency(encargos.total)}
+                                                        </span>
+                                                        {isOverdue && (encargos.multa > 0 || encargos.juros > 0) && (
+                                                            <HabitaTooltip
+                                                                content={
+                                                                    <div className="w-48 space-y-1.5 font-sans">
+                                                                        <div className="flex justify-between border-b border-white/10 pb-1 mb-1">
+                                                                            <span className="opacity-60 uppercase font-black">Atraso</span>
+                                                                            <span className="text-rose-400 font-black">+{encargos.diasAtraso}D</span>
+                                                                        </div>
+                                                                        <div className="flex justify-between text-[8px]">
+                                                                            <span className="opacity-60">Original:</span>
+                                                                            <span>{formatCurrency(total)}</span>
+                                                                        </div>
+                                                                        <div className="flex justify-between text-[8px]">
+                                                                            <span className="opacity-60">Multa:</span>
+                                                                            <span>{formatCurrency(encargos.multa)}</span>
+                                                                        </div>
+                                                                        <div className="flex justify-between text-[8px]">
+                                                                            <span className="opacity-60">Juros:</span>
+                                                                            <span>{formatCurrency(encargos.juros)}</span>
+                                                                        </div>
+                                                                        <div className="flex justify-between font-black text-emerald-400 border-t border-white/10 pt-1 mt-1">
+                                                                            <span>TOTAL:</span>
+                                                                            <span>{formatCurrency(encargos.total)}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                }
+                                                            >
+                                                                <div className="flex items-center gap-1 text-[9px] font-black text-slate-400 uppercase tracking-tighter">
+                                                                    <span className="line-through">{formatCurrency(total)}</span>
+                                                                    <Info size={10} className="text-indigo-400" />
+                                                                </div>
+                                                            </HabitaTooltip>
+                                                        )}
                                                     </div>
                                                 </div>
 
@@ -588,6 +631,11 @@ Total................... ${formatCurrency(total).replace('R$', 'R$ ')}`;
                                                         {(unit.status === 'pago' || unit.paymentDate) && (
                                                             <HabitaBadge variant="success" size="xs">
                                                                 PAGO
+                                                            </HabitaBadge>
+                                                        )}
+                                                        {isOverdue && !isPaid && (
+                                                            <HabitaBadge variant="error" size="xs" className="animate-pulse">
+                                                                +{encargos.diasAtraso}D ATRASO
                                                             </HabitaBadge>
                                                         )}
                                                     </div>
@@ -670,8 +718,47 @@ Total................... ${formatCurrency(total).replace('R$', 'R$ ')}`;
                                         <HabitaTD align="right" className={cn("hidden md:table-cell font-bold", extraFeesTotal > 0 ? "text-amber-600" : "text-slate-400")}>
                                             {formatCurrency(extraFeesTotal)}
                                         </HabitaTD>
-                                        <HabitaTD align="right" className="font-black text-slate-900 border-l border-slate-50 pl-4 bg-slate-50/10 hidden md:table-cell">
-                                            {formatCurrency(total)}
+                                        <HabitaTD align="right" className="border-l border-slate-50 pl-4 bg-slate-50/10 hidden md:table-cell">
+                                            <div className="flex flex-col items-end">
+                                                <span className={cn("font-black text-sm", isPaid ? "text-slate-900" : isOverdue ? "text-rose-600" : "text-slate-900")}>
+                                                    {formatCurrency(encargos.total)}
+                                                </span>
+                                                {isOverdue && (encargos.multa > 0 || encargos.juros > 0) && (
+                                                    <HabitaTooltip
+                                                        content={
+                                                            <div className="w-48 space-y-1.5 font-sans">
+                                                                <div className="flex justify-between border-b border-white/10 pb-1 mb-1">
+                                                                    <span className="opacity-60 uppercase font-black">Detalhes do Atraso</span>
+                                                                    <span className="text-rose-400 font-black">+{encargos.diasAtraso}D</span>
+                                                                </div>
+                                                                <div className="flex justify-between">
+                                                                    <span className="opacity-60">Valor Base:</span>
+                                                                    <span>{formatCurrency(total)}</span>
+                                                                </div>
+                                                                <div className="flex justify-between">
+                                                                    <span className="opacity-60">Multa ({settings.multaPercent}%):</span>
+                                                                    <span>{formatCurrency(encargos.multa)}</span>
+                                                                </div>
+                                                                <div className="flex justify-between">
+                                                                    <span className="opacity-60">Juros Pro-rata:</span>
+                                                                    <span>{formatCurrency(encargos.juros)}</span>
+                                                                </div>
+                                                                <div className="flex justify-between font-black text-emerald-400 border-t border-white/10 pt-1 mt-1">
+                                                                    <span>TOTAL:</span>
+                                                                    <span>{formatCurrency(encargos.total)}</span>
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    >
+                                                        <div className="flex items-center gap-1.5 mt-0.5 cursor-help">
+                                                            <span className="text-[10px] font-black text-slate-400 line-through">
+                                                                {formatCurrency(total)}
+                                                            </span>
+                                                            <Info size={12} className="text-indigo-400" />
+                                                        </div>
+                                                    </HabitaTooltip>
+                                                )}
+                                            </div>
                                         </HabitaTD>
                                         <HabitaTD align="right" className="hidden md:table-cell">
                                             <div className="flex items-center justify-end gap-1">

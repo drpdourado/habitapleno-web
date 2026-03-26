@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useApp, type Expense, type Revenue } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
-import { parseOfx, type OfxTransaction } from '../utils/OfxUtils.ts';
+import { parseOfx, type OfxTransaction } from '../utils/OfxUtils';
 import {
     FileText, CheckCircle2, AlertCircle, ArrowRight,
     PlusCircle, Calendar, DollarSign, RefreshCcw, LayoutDashboard, ShieldAlert
 } from 'lucide-react';
-import { useCategories } from '../hooks/useCategories.ts';
+import { useCategories } from '../hooks/useCategories';
 import { hasPermission } from '../utils/rbac';
 import { useToast } from '../contexts/ToastContext';
 import { adminService } from '../services/AdminService';

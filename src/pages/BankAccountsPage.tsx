@@ -11,6 +11,7 @@ import { HabitaModal } from '../components/ui/HabitaModal';
 import { HabitaStatGrid } from '../components/ui/HabitaStatGrid';
 import { HabitaContainer, HabitaContainerHeader, HabitaContainerContent } from '../components/ui/HabitaContainer';
 import { Landmark, Plus, Pencil, Trash2, ShieldAlert, TrendingUp } from 'lucide-react';
+import { formatCurrency } from '../utils/FinanceUtils';
 
 const BankAccountsPage: React.FC = () => {
     const { bankAccounts, addBankAccount, updateBankAccount, deleteBankAccount } = useApp();
@@ -79,10 +80,6 @@ const BankAccountsPage: React.FC = () => {
                 showToast("Erro ao excluir conta bancária.", "error");
             }
         }
-    };
-
-    const formatCurrency = (value: number) => {
-        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
     };
 
     return (

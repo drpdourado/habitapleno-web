@@ -14,6 +14,7 @@ import { HabitaMonthPicker } from '../components/ui/HabitaMonthPicker';
 import { HabitaIconActionButton } from '../components/ui/HabitaIconActionButton';
 import { HabitaModal } from '../components/ui/HabitaModal';
 import { HabitaHeading } from '../components/ui/HabitaHeading';
+import { formatCurrency } from '../utils/FinanceUtils';
 
 const HistoryPage = () => {
     const { visibleHistory: history, deleteHistoryRecord, isMonthClosed } = useApp();
@@ -50,10 +51,6 @@ const HistoryPage = () => {
             setIdToDelete(null);
             setRefMonthToDelete(null);
         }
-    };
-
-    const formatCurrency = (val: number) => {
-        return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     };
 
     const formatDate = (isoString: string) => {

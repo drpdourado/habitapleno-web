@@ -9,9 +9,11 @@ function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
 import { generateReceiptPDF } from '../utils/ReceiptGenerator';
+import { calcularEncargos, formatCurrency } from '../utils/FinanceUtils';
 import { generatePixPayload } from '../utils/PixUtils';
 import { QRCodeSVG } from 'qrcode.react';
 import { HabitaSpinner } from '../components/ui/HabitaSpinner';
+import { HabitaTooltip } from '../components/ui/HabitaTooltip';
 import { HabitaButton } from '../components/ui/HabitaButton';
 import { HabitaHeading } from '../components/ui/HabitaHeading';
 import { HabitaStatGrid } from '../components/ui/HabitaStatGrid';
@@ -485,7 +487,7 @@ const DashboardPage = () => {
         const pendingReadings = summary?.pendingReadings ?? 0;
         const currentRefOpenUnits = summary?.totalPendingUnits ?? 0;
         const currentRefOpenValue = summary?.totalPendingValue ?? 0;
-        const hasCurrentRefFaturas = !!summary?.totalPendingUnits || !!summary?.currentRefRecord;
+        const hasCurrentRefFaturas = !!summary?.totalPendingUnits || !!summary?.paidUnits || !!summary?.upcomingUnits || !!summary?.overdueUnits;
 
         return {
             paidUnits, upcomingUnits, overdueUnits, pendingReadings,
@@ -1179,7 +1181,7 @@ const DashboardPage = () => {
                                                             <HabitaCardTitle className="flex items-center gap-2">
                                                                 <DollarSign size={16} className="text-emerald-500" /> Faturas em Aberto
                                                             </HabitaCardTitle>
-                                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Referência {settings.currentRefMonth}</p>
+                                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Referência {activeRefMonth}</p>
                                                         </HabitaCardHeader>
 
                                                         <div className="space-y-4">
@@ -1199,7 +1201,7 @@ const DashboardPage = () => {
                                                                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 flex items-center gap-3">
                                                                     <Info size={16} className="text-slate-400" />
                                                                     <p className="text-[11px] font-medium text-slate-500 leading-tight">
-                                                                        O faturamento da referência {settings.currentRefMonth} ainda não foi gerado.
+                                                                        O faturamento da referência {activeRefMonth} ainda não foi gerado.
                                                                     </p>
                                                                 </div>
                                                             )}
@@ -1322,7 +1324,7 @@ const DashboardPage = () => {
                                                     <HabitaCardTitle className="flex items-center gap-2 text-slate-800 text-[11px] font-black uppercase tracking-widest">
                                                         <CheckCircle2 size={16} className="text-indigo-500" /> Status de Pagamento
                                                     </HabitaCardTitle>
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Visão Global da Referência</p>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Visão Global da Referência {activeRefMonth}</p>
                                                 </HabitaCardHeader>
 
                                                 <div className="flex flex-col sm:flex-row items-center gap-6">
@@ -1568,19 +1570,58 @@ const DashboardPage = () => {
                                                             Recibo
                                                         </HabitaButton>
                                                     ) : isAdmin && detailsType.startsWith('payment') && (
-                                                        <HabitaButton
-                                                            onClick={() => {
-                                                                const u = allUnits.find((bu: Unit) => bu.id === unit.id);
-                                                                if (!u) return;
-                                                                setSelectedUnitForPayment(u);
-                                                                setPaymentReferenceMonth(unit.referenceMonth || activeRefMonth);
-                                                            }}
-                                                            variant="primary"
-                                                            size="sm"
-                                                            icon={<Check size={14} />}
-                                                        >
-                                                            Confirmar
-                                                        </HabitaButton>
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="flex flex-col items-end mr-2">
+                                                                <span className="text-xs font-bold text-rose-600">
+                                                                    {formatCurrency(calcularEncargos(calculateRecordTotal(unit), unit.dueDate || '', settings).total)}
+                                                                </span>
+                                                                <HabitaTooltip
+                                                                    content={
+                                                                        <div className="w-48 space-y-1 font-sans">
+                                                                            <div className="flex justify-between border-b border-white/10 pb-1 mb-1">
+                                                                                <span className="opacity-60 uppercase font-bold text-[10px]">Encargos de Atraso</span>
+                                                                            </div>
+                                                                            <div className="flex justify-between text-[10px]">
+                                                                                <span className="opacity-60">Valor Base:</span>
+                                                                                <span>{formatCurrency(calculateRecordTotal(unit))}</span>
+                                                                            </div>
+                                                                            <div className="flex justify-between text-[10px]">
+                                                                                <span className="opacity-60 text-rose-400">Multa:</span>
+                                                                                <span className="text-rose-400">{formatCurrency(calcularEncargos(calculateRecordTotal(unit), unit.dueDate || '', settings).multa)}</span>
+                                                                            </div>
+                                                                            <div className="flex justify-between text-[10px]">
+                                                                                <span className="opacity-60 text-rose-400">Juros:</span>
+                                                                                <span className="text-rose-400">{formatCurrency(calcularEncargos(calculateRecordTotal(unit), unit.dueDate || '', settings).juros)}</span>
+                                                                            </div>
+                                                                            <div className="flex justify-between font-bold text-emerald-400 border-t border-white/10 pt-1 mt-1 text-[11px]">
+                                                                                <span>TOTAL:</span>
+                                                                                <span>{formatCurrency(calcularEncargos(calculateRecordTotal(unit), unit.dueDate || '', settings).total)}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    }
+                                                                >
+                                                                    <div className="flex items-center gap-1 cursor-help">
+                                                                        <span className="text-[9px] font-black text-slate-400 line-through">
+                                                                            {formatCurrency(calculateRecordTotal(unit))}
+                                                                        </span>
+                                                                        <Info size={10} className="text-indigo-400" />
+                                                                    </div>
+                                                                </HabitaTooltip>
+                                                            </div>
+                                                            <HabitaButton
+                                                                onClick={() => {
+                                                                    const u = allUnits.find((bu: Unit) => bu.id === unit.id);
+                                                                    if (!u) return;
+                                                                    setSelectedUnitForPayment(u);
+                                                                    setPaymentReferenceMonth(unit.referenceMonth || activeRefMonth);
+                                                                }}
+                                                                variant="primary"
+                                                                size="sm"
+                                                                icon={<Check size={14} />}
+                                                            >
+                                                                Confirmar
+                                                            </HabitaButton>
+                                                        </div>
                                                     )}
                                                     <div className={`w-2 h-2 rounded-full ${detailsType === 'reading' ? 'bg-amber-400' : ((unit.status === 'pago' || unit.paymentDate) ? 'bg-emerald-500' : 'bg-rose-500')}`} />
                                                 </div>
