@@ -60,17 +60,19 @@ export interface Unit {
     id: string;
     block?: string;
     ownerName: string;
+    ownerEmail?: string;
+    ownerId?: string;
+    ownerContact?: string;
     typeId: string;
     residentType?: 'owner' | 'tenant';
     tenantName?: string;
     tenantEmail?: string;
     tenantId?: string;
-    ownerId?: string;
-    ownerContact?: string;
     dependentes?: Dependente[];
     vehicles?: Vehicle[];
     currentGasReading?: number;
     lastGasReading?: number;
+    [key: string]: any;
 }
 
 export interface UserProfile {
@@ -118,6 +120,7 @@ const UnitsPage = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
     const [editOwnerName, setEditOwnerName] = useState('');
+    const [editOwnerEmail, setEditOwnerEmail] = useState('');
     const [editTypeId, setEditTypeId] = useState('');
     const [residentType, setResidentType] = useState<'owner' | 'tenant'>('owner');
     const [tenantName, setTenantName] = useState('');
@@ -239,15 +242,103 @@ const UnitsPage = () => {
         );
     };
 
+    /**
+     * Identifica em tempo real quem é o responsável atual para faturamento.
+     * Prioriza a conta de sistema vinculada se existir.
+     */
+    const getResponsavelDaUnidade = (unitId: string): {
+        nome: string;
+        email?: string;
+        tipo: 'inquilino' | 'proprietario' | 'sem_cadastro';
+        inquilino?: UserProfile;
+        proprietario?: UserProfile;
+    } => {
+        const unit = units.find(u => u.id === unitId);
+        const vinculados = getActiveUsersForUnit(unitId);
+        
+        // Find system accounts for both roles if they exist
+        const regInquilino = vinculados.find(u => {
+            const vinculo = u.vinculos?.find((v: any) => v.unitId === unitId);
+            return vinculo?.profileId?.toLowerCase().includes('inquilino');
+        });
+
+        const regProprietario = vinculados.find(u => {
+            const vinculo = u.vinculos?.find((v: any) => v.unitId === unitId);
+            return vinculo?.profileId?.toLowerCase().includes('proprietario');
+        });
+
+        // Use the unit's ResidentType to determine the primary responsible
+        const isTenantMode = unit?.residentType === 'tenant';
+
+        if (isTenantMode) {
+            // Prioritize registered tenant, then manual tenant name
+            if (regInquilino) {
+                return { 
+                    nome: regInquilino.name || regInquilino.email, 
+                    email: regInquilino.email, 
+                    tipo: 'inquilino', 
+                    hasAccount: true, // Adicionado
+                    inquilino: regInquilino, 
+                    proprietario: regProprietario 
+                };
+            }
+            if (unit?.tenantName) {
+                return { 
+                    nome: unit.tenantName, 
+                    email: unit.tenantEmail, 
+                    tipo: 'inquilino', 
+                    hasAccount: false, // Adicionado
+                    proprietario: regProprietario 
+                };
+            }
+        }
+
+        // Default or Owner Mode: Prioritize registered owner, then legacy owner
+        if (regProprietario) {
+            return { 
+                nome: regProprietario.name || regProprietario.email, 
+                email: regProprietario.email, 
+                tipo: 'proprietario', 
+                hasAccount: true, // Adicionado
+                proprietario: regProprietario, 
+                inquilino: regInquilino 
+            };
+        }
+
+        if (unit?.ownerName) {
+            return { 
+                nome: unit.ownerName, 
+                email: unit.ownerEmail, // Adicionado
+                tipo: 'proprietario', // Mudado de sem_cadastro para proprietario para simplificar a cor
+                hasAccount: false, // Adicionado
+                inquilino: regInquilino 
+            };
+        }
+
+        // Absolute fallback: first linked user found
+        if (vinculados.length > 0) {
+            const first = vinculados[0];
+            return { nome: first.name || first.email, email: first.email, tipo: 'proprietario', proprietario: first };
+        }
+
+        return { nome: 'Sem titular', tipo: 'sem_cadastro' };
+    };
+
     const startEditing = (unit: Unit) => {
+        const resp = getResponsavelDaUnidade(unit.id);
+        
         setEditingUnit(unit);
-        setEditOwnerName(unit.ownerName);
+        setEditOwnerName(resp.proprietario?.name || unit.ownerName);
+        setEditOwnerEmail(resp.proprietario?.email || unit.ownerEmail || '');
+        setEditOwnerId(resp.proprietario?.uid || unit.ownerId);
+
         setEditTypeId(unit.typeId);
         setResidentType(unit.residentType || 'owner');
-        setTenantName(unit.tenantName || '');
-        setTenantEmail(unit.tenantEmail || '');
-        setEditTenantId(unit.tenantId);
-        setEditOwnerId(unit.ownerId);
+        
+        setTenantName(resp.inquilino?.name || unit.tenantName || '');
+        setTenantEmail(resp.inquilino?.email || unit.tenantEmail || '');
+        setEditTenantId(resp.inquilino?.uid || unit.tenantId);
+
         setOwnerContact(unit.ownerContact || '');
         setIsEditModalOpen(true);
     };
@@ -262,6 +353,7 @@ const UnitsPage = () => {
             const updatedUnit = {
                 ...editingUnit,
                 ownerName: editOwnerName.trim(),
+                ownerEmail: editOwnerEmail.trim(),
                 ownerId: editOwnerId,
                 typeId: editTypeId,
                 residentType,
@@ -695,28 +787,42 @@ const UnitsPage = () => {
                                                     )}
                                                 </div>
                                                 <div className="flex items-center gap-2 mt-1">
-                                                    <span className="text-[11px] font-bold text-slate-700 uppercase tracking-tight">
-                                                        {unit.residentType === 'tenant' ? (unit.tenantName || 'N/A') : unit.ownerName}
-                                                    </span>
-                                                    <HabitaBadge 
-                                                        variant={unit.residentType === 'tenant' ? 'neutral' : 'indigo'} 
-                                                        size="xs" 
-                                                        className={cn(
-                                                            "text-[8px] font-black tracking-widest px-1.5 h-4",
-                                                            unit.residentType === 'tenant' ? "bg-slate-100 text-slate-500 border-slate-200" : "bg-indigo-50 text-indigo-500 border-indigo-100"
-                                                        )}
-                                                    >
-                                                        {unit.residentType === 'tenant' ? 'INQUILINO' : 'PROPRIETÁRIO'}
-                                                    </HabitaBadge>
-                                                    {unit.tenantId && (
-                                                        <HabitaBadge variant="outline" size="xs" className="h-4 px-1 border-indigo-200 text-indigo-500">
-                                                            <Users size={10} className="mr-1" /> CONTA VINCULADA
-                                                        </HabitaBadge>
-                                                    )}
+                                                    {(() => {
+                                                        const resp = getResponsavelDaUnidade(unit.id);
+                                                        const isInquilino = resp.tipo === 'inquilino';
+                                                        const hasAccount = (resp as any).hasAccount;
+                                                        
+                                                        let badgeColor = "bg-slate-400 text-white border-transparent";
+                                                        if (hasAccount) {
+                                                            badgeColor = isInquilino ? "bg-blue-500 text-white border-transparent" : "bg-emerald-500 text-white border-transparent shadow-sm";
+                                                        } else {
+                                                            // Sem conta vinculada
+                                                            badgeColor = isInquilino ? "bg-amber-500 text-white border-transparent" : "bg-slate-400 text-white border-transparent";
+                                                        }
+
+                                                        return (
+                                                            <>
+                                                                <span className="text-[11px] font-bold text-slate-700 uppercase tracking-tight">
+                                                                    {resp.nome}
+                                                                </span>
+                                                                <HabitaBadge 
+                                                                    variant="neutral" 
+                                                                    size="xs" 
+                                                                    className={cn(
+                                                                        "text-[8px] font-black tracking-widest px-1.5 h-4",
+                                                                        badgeColor
+                                                                    )}
+                                                                >
+                                                                    {isInquilino ? 'INQUILINO' : 'PROPRIETÁRIO'}
+                                                                    {!hasAccount ? ' (MANUAL)' : ''}
+                                                                </HabitaBadge>
+                                                                {isInquilino && resp.proprietario && (
+                                                                    <span className="text-[9px] text-slate-400 font-normal mt-0.5 ml-1">Prop: {resp.proprietario.name || resp.proprietario.email}</span>
+                                                                )}
+                                                            </>
+                                                        );
+                                                    })()}
                                                 </div>
-                                                {unit.residentType === 'tenant' && (
-                                                    <span className="text-[10px] text-slate-400 font-normal mt-0.5">Proprietário: {unit.ownerName}</span>
-                                                )}
                                             </div>
                                             <div className="text-right">
                                                 <HabitaBadge variant="neutral" size="xs">
@@ -753,43 +859,52 @@ const UnitsPage = () => {
                                     {unit.block || '-'}
                                 </HabitaTD>
                                 <HabitaTD label="Titular / Morador" className="hidden md:table-cell font-normal text-slate-700 text-left">
-                                    <div className="flex flex-col group/name min-h-[42px] justify-center">
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-bold text-slate-900 tracking-tight">
-                                                {unit.residentType === 'tenant' ? (unit.tenantName || 'N/A') : unit.ownerName}
-                                            </span>
-                                            <HabitaBadge 
-                                                variant={unit.residentType === 'tenant' ? 'neutral' : 'indigo'} 
-                                                size="xs" 
-                                                className={cn(
-                                                    "text-[8px] font-black tracking-widest px-1.5 h-4",
-                                                    unit.residentType === 'tenant' ? "bg-slate-600 text-white border-transparent" : "bg-indigo-600 text-white border-transparent shadow-sm"
-                                                )}
-                                            >
-                                                {unit.residentType === 'tenant' ? 'INQUILINO' : 'PROPRIETÁRIO'}
-                                            </HabitaBadge>
-                                            {unit.residentType === 'tenant' && (
-                                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-indigo-50 border border-indigo-100 rounded-md text-indigo-600 text-[10px] font-black uppercase tracking-tighter">
-                                                    <Shield size={10} strokeWidth={3} /> {unit.ownerName} (PROP)
+                                    {(() => {
+                                        const resp = getResponsavelDaUnidade(unit.id);
+                                        const isInquilino = resp.tipo === 'inquilino';
+                                        const hasAccount = (resp as any).hasAccount;
+
+                                        let badgeColor = "bg-slate-400 text-white border-transparent";
+                                        if (hasAccount) {
+                                            badgeColor = isInquilino ? "bg-blue-500 text-white border-transparent shadow-sm" : "bg-emerald-500 text-white border-transparent shadow-sm";
+                                        } else {
+                                            // Sem conta vinculada
+                                            badgeColor = isInquilino ? "bg-amber-500 text-white border-transparent shadow-sm" : "bg-slate-400 text-white border-transparent shadow-sm";
+                                        }
+
+                                        return (
+                                            <div className="flex flex-col group/name min-h-[42px] justify-center">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className="font-bold text-slate-900 tracking-tight">
+                                                        {resp.nome}
+                                                    </span>
+                                                    <HabitaBadge
+                                                        variant="neutral"
+                                                        size="xs"
+                                                        className={cn(
+                                                            "text-[8px] font-black tracking-widest px-1.5 h-4",
+                                                            badgeColor
+                                                        )}
+                                                    >
+                                                        {isInquilino ? 'INQUILINO' : 'PROPRIETÁRIO'}
+                                                        {!hasAccount ? ' (MANUAL)' : ''}
+                                                    </HabitaBadge>
+                                                    {canManageUnits && (
+                                                        <HabitaIconActionButton icon={<Pencil />} variant="ghost" size="xs" tooltip="Editar Unidade" onClick={() => startEditing(unit)} className="opacity-0 group-hover/name:opacity-100 transition-opacity h-4 w-4" />
+                                                    )}
                                                 </div>
-                                            )}
-                                            <HabitaIconActionButton 
-                                                icon={<Pencil />} 
-                                                variant="ghost" 
-                                                size="xs" 
-                                                tooltip="Gerenciar Ocupação" 
-                                                onClick={() => startEditing(unit)} 
-                                                className="md:opacity-0 group-hover/name:opacity-100"
-                                            />
-                                        </div>
-                                        {unit.residentType === 'tenant' && (
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <span className="text-[10px] text-slate-400 font-normal uppercase tracking-wider leading-none">
-                                                    Contato Proprietário: <span className="font-bold text-slate-500">{unit.ownerContact || 'N/A'}</span>
-                                                </span>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    {resp.email && <span className="text-[10px] text-slate-400 font-medium lowercase italic">{resp.email}</span>}
+                                                    {isInquilino && resp.proprietario && (
+                                                        <div className="flex items-center gap-1.5">
+                                                            <div className="w-1 h-3 bg-indigo-200 rounded-full" />
+                                                            <span className="text-[9px] text-slate-400 font-normal">Prop: {resp.proprietario.name || resp.proprietario.email}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                        )}
-                                    </div>
+                                        );
+                                    })()}
                                     {/* Active Users Badges */}
                                     {getActiveUsersForUnit(unit.id).length > 0 && (
                                         <div className="mt-2 flex flex-wrap gap-1">
@@ -840,13 +955,101 @@ const UnitsPage = () => {
                 size="lg"
             >
                 {selectedUnit && (
-                    <div className="space-y-10">
-                        {/* Titular Section */}
-                        <div className="p-6 bg-indigo-50/50 rounded-2xl border border-indigo-100 border-dashed relative">
-                            <div className="absolute -top-3 left-6 px-3 py-1 bg-indigo-600 text-white rounded-full font-black text-[8px] uppercase tracking-[0.2em] shadow-sm">Titular Responsável</div>
-                            <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">{selectedUnit.ownerName}</h3>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase mt-2">Ponto de contato principal e responsável legal</p>
-                        </div>
+                    <div className="space-y-6">
+                        {/* Occupation Mode Banner - driven by registered users */}
+                        {(() => {
+                            const resp = getResponsavelDaUnidade(selectedUnit.id);
+                            const isInquilino = resp.tipo === 'inquilino';
+                            const isSemCadastro = resp.tipo === 'sem_cadastro';
+                            return (
+                                <div className={cn(
+                                    "p-4 rounded-xl border flex items-center justify-between gap-4",
+                                    isInquilino ? "bg-amber-50 border-amber-200" : isSemCadastro ? "bg-slate-50 border-slate-200" : "bg-indigo-50 border-indigo-100"
+                                )}>
+                                    <div className="flex items-center gap-3">
+                                        <div className={cn(
+                                            "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                                            isInquilino ? "bg-amber-100 text-amber-600" : isSemCadastro ? "bg-slate-100 text-slate-400" : "bg-indigo-100 text-indigo-600"
+                                        )}>
+                                            <Shield size={16} />
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Titular Responsável (Fatura)</p>
+                                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                                <span className={cn(
+                                                    "text-sm font-black",
+                                                    isInquilino ? "text-blue-700" : "text-emerald-700"
+                                                )}>
+                                                    {isInquilino ? 'Inquilino:' : 'Proprietário:'}
+                                                </span>
+                                                <span className="text-sm font-bold text-slate-800">{resp.nome}</span>
+                                                <HabitaBadge
+                                                    variant="neutral"
+                                                    size="xs"
+                                                    className={cn(
+                                                        "text-[7px] font-black border-transparent",
+                                                        (resp as any).hasAccount 
+                                                            ? (isInquilino ? "bg-blue-500 text-white" : "bg-emerald-500 text-white")
+                                                            : (isInquilino ? "bg-amber-500 text-white" : "bg-slate-400 text-white")
+                                                    )}
+                                                >
+                                                    {(resp as any).hasAccount ? 'CONTA VINCULADA' : 'CADASTRO MANUAL'}
+                                                </HabitaBadge>
+                                            </div>
+                                            {isInquilino && resp.proprietario && (
+                                                <p className="text-[9px] text-slate-500 mt-0.5">
+                                                    Proprietário: <span className="font-bold">{resp.proprietario.name || resp.proprietario.email}</span>
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {canManageUnits && (
+                                        <HabitaIconActionButton
+                                            icon={<Pencil />}
+                                            variant="ghost"
+                                            size="sm"
+                                            tooltip="Configurar Ocupação / Inquilino"
+                                            onClick={() => { setShowResidentsModal(false); startEditing(selectedUnit); }}
+                                        />
+                                    )}
+                                </div>
+                            );
+                        })()}
+
+                        {/* Billing Card Section */}
+                        {(() => {
+                            const resp = getResponsavelDaUnidade(selectedUnit.id);
+                            const isInquilino = resp.tipo === 'inquilino';
+                            return isInquilino ? (
+                                <div className="space-y-3">
+                                    <div className="p-6 bg-amber-50/60 rounded-2xl border border-amber-200 border-dashed relative">
+                                        <div className="absolute -top-3 left-6 flex items-center gap-2">
+                                            <span className="px-3 py-1 bg-amber-500 text-white rounded-full font-black text-[8px] uppercase tracking-[0.2em] shadow-sm">Fatura em Nome de</span>
+                                            <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded-full font-black text-[8px] uppercase tracking-[0.15em] border border-amber-200">Inquilino</span>
+                                        </div>
+                                        <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">{resp.inquilino?.name || resp.nome}</h3>
+                                        {resp.inquilino?.email && <p className="text-[10px] text-amber-600 font-bold mt-1">{resp.inquilino.email}</p>}
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase mt-2">Responsável pelo pagamento das faturas do condomínio</p>
+                                    </div>
+                                    {resp.proprietario && (
+                                        <div className="p-4 bg-indigo-50/40 rounded-xl border border-indigo-100 border-dashed relative flex items-center justify-between gap-4">
+                                            <div className="absolute -top-2.5 left-4 px-2 py-0.5 bg-indigo-600 text-white rounded-full font-black text-[7px] uppercase tracking-[0.2em] shadow-sm">Proprietário da Unidade</div>
+                                            <div>
+                                                <h4 className="text-sm font-black text-slate-700 uppercase tracking-tight">{resp.proprietario.name || resp.proprietario.email}</h4>
+                                            </div>
+                                            <HabitaBadge variant="indigo" size="xs" className="shrink-0 bg-indigo-600 text-white border-transparent text-[8px] font-black tracking-widest">PROPRIETÁRIO</HabitaBadge>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="p-6 bg-indigo-50/50 rounded-2xl border border-indigo-100 border-dashed relative">
+                                    <div className="absolute -top-3 left-6 px-3 py-1 bg-indigo-600 text-white rounded-full font-black text-[8px] uppercase tracking-[0.2em] shadow-sm">Titular Responsável</div>
+                                    <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">{resp.nome}</h3>
+                                    {resp.email && <p className="text-[10px] text-indigo-500 font-bold mt-1">{resp.email}</p>}
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase mt-2">Ponto de contato principal e responsável legal pelas faturas</p>
+                                </div>
+                            );
+                        })()}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
                             {/* Left Column: Residents */}
@@ -1118,19 +1321,53 @@ const UnitsPage = () => {
             >
                 {editingUnit && (
                     <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <HabitaInput 
-                                label="Proprietário (Titular)" 
-                                value={editOwnerName} 
-                                onChange={e => setEditOwnerName(e.target.value)} 
-                                className="h-10 font-normal text-slate-700"
-                            />
-                            <HabitaCombobox 
-                                label="Tipologia de Unidade" 
-                                options={settings.unitTypes.map(t => ({ label: t.name.toUpperCase(), value: t.id }))}
-                                value={editTypeId}
-                                onChange={setEditTypeId}
-                            />
+                        <div className="space-y-4">
+                            <div className="relative group">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 px-1">Email do Proprietário (Conta de Sistema)</label>
+                                <div className="relative">
+                                    <HabitaInput 
+                                        value={editOwnerEmail} 
+                                        onChange={e => {
+                                            const val = e.target.value;
+                                            setEditOwnerEmail(val);
+                                            // Busca automática na lista de usuários do sistema para o proprietário
+                                            const user = allSystemUsers.find(u => u.email.toLowerCase() === val.toLowerCase());
+                                            if (user) {
+                                                setEditOwnerId(user.uid);
+                                                setEditOwnerName(user.name || '');
+                                                showToast(`Proprietário identificado: ${user.name}`, 'info');
+                                            } else {
+                                                setEditOwnerId(undefined);
+                                            }
+                                        }} 
+                                        placeholder="proprietario@email.com"
+                                        className="h-11 font-medium text-slate-700 bg-white"
+                                        disabled={!!editOwnerId}
+                                    />
+                                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={16} />
+                                </div>
+                                {!!editOwnerId && (
+                                    <p className="text-[9px] text-emerald-600 font-bold mt-1 uppercase tracking-tighter">
+                                        ✅ Conta de sistema vinculada. Dados sincronizados.
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <HabitaInput 
+                                    label="Nome do Proprietário" 
+                                    value={editOwnerName} 
+                                    onChange={e => setEditOwnerName(e.target.value)} 
+                                    className="h-10 font-normal text-slate-700"
+                                    disabled={!!editOwnerId || getActiveUsersForUnit(editingUnit.id).length > 0}
+                                />
+                                <HabitaCombobox 
+                                    label="Tipologia de Unidade" 
+                                    options={settings.unitTypes.map(t => ({ label: t.name.toUpperCase(), value: t.id }))}
+                                    value={editTypeId}
+                                    onChange={setEditTypeId}
+                                />
+                            </div>
                         </div>
 
                         <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
@@ -1189,9 +1426,15 @@ const UnitsPage = () => {
                                                 }} 
                                                 placeholder="inquilino@email.com"
                                                 className="h-11 font-medium text-slate-700 bg-white"
+                                                disabled={!!editTenantId}
                                             />
                                             <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={16} />
                                         </div>
+                                        {!!editTenantId && (
+                                            <p className="text-[9px] text-blue-600 font-bold mt-1 uppercase tracking-tighter">
+                                                ✅ Conta de sistema vinculada. Dados sincronizados.
+                                            </p>
+                                        )}
                                     </div>
 
                                     {!editTenantId && tenantEmail && (
@@ -1207,7 +1450,7 @@ const UnitsPage = () => {
                                         onChange={e => setTenantName(e.target.value)} 
                                         placeholder="Nome completo do morador"
                                         className="h-10 font-normal text-slate-700"
-                                        disabled={!!editTenantId}
+                                        disabled={!!editTenantId || getActiveUsersForUnit(editingUnit.id).length > 0}
                                     />
                                     
                                     <div className="p-3 bg-white border border-slate-100 rounded-xl">
@@ -1217,6 +1460,7 @@ const UnitsPage = () => {
                                             onChange={e => setOwnerContact(e.target.value)} 
                                             placeholder="(00) 00000-0000"
                                             className="h-10 font-normal text-slate-700"
+                                            disabled={getActiveUsersForUnit(editingUnit.id).length > 0}
                                         />
                                         <p className="text-[9px] text-slate-400 mt-2 italic">* Este contato será usado apenas para cobranças e avisos proprietários.</p>
                                     </div>

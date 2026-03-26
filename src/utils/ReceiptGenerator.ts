@@ -5,7 +5,8 @@ export const generateReceiptPDF = async (data: any) => {
     const response = await api.post('/financial/generate-pdf', {
       unitId: data.unitId || data.unit?.id,
       referenceMonth: data.referenceMonth,
-      type: data.type || 'fatura'
+      type: data.type || 'fatura',
+      ownerOverride: data.ownerOverride
     }, { responseType: 'blob' });
 
     const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));

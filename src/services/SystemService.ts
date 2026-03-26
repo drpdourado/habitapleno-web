@@ -53,5 +53,18 @@ export const systemService = {
     } catch (error: any) {
       return { success: false, error: error.response?.data?.message || 'Erro ao salvar configurações.' };
     }
+  },
+
+  /**
+   * Adds a new condominium association (vínculo) to a user account.
+   */
+  addVinculoToUser: async (uid: string, data: { unitId: string; profileId: string; role?: string }) => {
+    try {
+      const response = await api.post(`/users/${uid}/vinculos`, data);
+      return { success: true, data: response.data?.data || response.data };
+    } catch (error: any) {
+      console.error("Error adding user vinculo:", error);
+      return { success: false, error: error.response?.data?.error || 'Erro ao vincular conta ao condomínio.' };
+    }
   }
 };

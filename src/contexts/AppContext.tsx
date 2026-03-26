@@ -9,7 +9,23 @@ import { useAuth } from './AuthContext';
  */
 export interface UnitType { id: string; name: string; baseFee: number;[key: string]: any; }
 export interface Category { id: string; name: string; type: 'income' | 'expense'; }
-export interface Unit { id: string; ownerName: string; typeId: string; lastGasReading: number; currentGasReading: number; status?: string; paymentDate?: string;[key: string]: any; }
+export interface Unit {
+  id: string; 
+  ownerName: string; 
+  ownerEmail?: string;
+  ownerContact?: string;
+  ownerId?: string;
+  residentType?: 'owner' | 'tenant';
+  tenantName?: string;
+  tenantEmail?: string;
+  tenantId?: string;
+  typeId: string; 
+  lastGasReading: number; 
+  currentGasReading: number; 
+  status?: string; 
+  paymentDate?: string;
+  [key: string]: any; 
+}
 export interface Setting { condoName: string; currentRefMonth: string; gasPrice: number; dueDay: number; unitTypes: UnitType[];[key: string]: any; }
 export interface Ocorrencia { id: string; titulo: string; categoria: string; status: 'Pendente' | 'Resolvida' | string; dataAbertura: string; dataResolucao?: string; prioridade?: 'Baixa' | 'Media' | 'Alta' | string; unitId?: string; [key: string]: any; }
 export interface Area { id: string; nome: string; capacidade: number; status: 'ativo' | 'inativo' | 'manutencao';[key: string]: any; }

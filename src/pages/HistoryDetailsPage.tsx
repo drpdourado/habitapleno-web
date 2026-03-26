@@ -32,7 +32,7 @@ import { HabitaStatGrid } from '../components/ui/HabitaStatGrid';
 const HistoryDetailsPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { visibleHistory: history, updateHistoryRecord, settings, isMonthClosed, extraFees } = useApp();
+    const { visibleHistory: history, updateHistoryRecord, settings, isMonthClosed, extraFees, users: allSystemUsers, units: allLiveUnits } = useApp();
     const { isAdmin, profile, accessProfile } = useAuth();
     const { showToast } = useToast();
 
@@ -154,7 +154,7 @@ const HistoryDetailsPage = () => {
                 value.toFixed(2).replace('.', ','),
                 fixedFee.toFixed(2).replace('.', ','),
                 totalAmount.toFixed(2).replace('.', ','),
-                unit.ownerName || '-'
+                getResponsavelDaUnidade(unit)
             ];
             csvContent += row.join(separator) + '\n';
         });
@@ -195,6 +195,44 @@ const HistoryDetailsPage = () => {
             setUnitToDelete(null);
             showToast(`Unidade ${unitToDelete} removida com sucesso.`, 'success');
         }
+    };
+
+    const getResponsavelDaUnidade = (snapshotUnit: Unit) => {
+        const unitId = snapshotUnit.id;
+        
+        // Tenta pegar a configuração LIVE da unidade para respeitar o ResidentType atual e campos atuais
+        const liveUnit = allLiveUnits.find(u => u.id === unitId);
+        const unitToUse = liveUnit || snapshotUnit;
+
+        const vinculados = allSystemUsers.filter((user: any) =>
+            user.vinculos?.some((v: any) => v.unitId === unitId)
+        );
+
+        const regInquilino = vinculados.find((u: any) => {
+            const vinculo = u.vinculos?.find((v: any) => v.unitId === unitId);
+            return vinculo?.profileId?.toLowerCase().includes('inquilino');
+        });
+
+        const regProprietario = vinculados.find((u: any) => {
+            const vinculo = u.vinculos?.find((v: any) => v.unitId === unitId);
+            return vinculo?.profileId?.toLowerCase().includes('proprietario');
+        });
+
+        // Lógica idêntica à de UnitsPage.tsx
+        if (unitToUse.residentType === 'tenant') {
+            if (regInquilino) return regInquilino.name || regInquilino.email;
+            if (unitToUse.tenantName) return unitToUse.tenantName;
+        }
+        
+        if (regProprietario) return regProprietario.name || regProprietario.email;
+        if (unitToUse.ownerName) return unitToUse.ownerName;
+
+        // Fallback absoluto: primeiro usuário vinculado encontrado
+        if (vinculados.length > 0) {
+            return vinculados[0].name || vinculados[0].email;
+        }
+
+        return 'Sem titular';
     };
 
     const calculateValues = (unit: Unit) => {
@@ -260,6 +298,7 @@ const HistoryDetailsPage = () => {
         const text = `
 Segue abaixo o valor do condomínio (Ref: ${record.referenceMonth}):
 Apartamento ${unit.id}:
+Morador......... ${getResponsavelDaUnidade(unit)}
 Vencimento........ ${record.dueDate || 'Data não salva'}
 Cota.................... ${formatCurrency(quota).replace('R$', 'R$ ')}
 ${extraFeesLines}${extraFeesLines ? '\n' : ''}Gás..................... ${formatCurrency(value).replace('R$', 'R$ ')}
@@ -296,7 +335,8 @@ Total................... ${formatCurrency(total).replace('R$', 'R$ ')}`;
             referenceMonth: record.referenceMonth,
             historyRecord: record,
             type,
-            hasPendingPrevious
+            hasPendingPrevious,
+            ownerOverride: getResponsavelDaUnidade(unit)
         });
     };
 
@@ -531,7 +571,7 @@ Total................... ${formatCurrency(total).replace('R$', 'R$ ')}`;
                                                 <div className="flex justify-between items-start">
                                                     <div className="flex flex-col">
                                                         <span className="font-medium text-slate-700 text-sm leading-tight tracking-tight">{cleanUnitId} - {unit.block || '—'}</span>
-                                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{unit.ownerName || '—'}</span>
+                                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{getResponsavelDaUnidade(unit)}</span>
                                                     </div>
                                                     <div className="text-right flex flex-col items-end">
                                                         <span className={cn("text-sm font-bold", isOverdue ? "text-rose-600" : "text-slate-900")}>
@@ -665,7 +705,7 @@ Total................... ${formatCurrency(total).replace('R$', 'R$ ')}`;
                                         <HabitaTD className="hidden md:table-cell">
                                             <div className="flex flex-col">
                                                 <span className="font-bold text-slate-900 text-sm leading-tight">{cleanUnitId} - {unit.block || '—'}</span>
-                                                <span className="text-[10px] text-slate-500 font-black uppercase tracking-tighter">{unit.ownerName || '—'}</span>
+                                                <span className="text-[10px] text-slate-500 font-black uppercase tracking-tighter">{getResponsavelDaUnidade(unit)}</span>
                                             </div>
                                         </HabitaTD>
                                         <HabitaTD className="hidden md:table-cell">
