@@ -15,5 +15,7 @@ export interface PollVote {
     userId: string;
     unitId: string;
     selectedOptionIndex: number;
+    votedOption?: any;
+    optionId?: any;
     timestamp: string;
 }

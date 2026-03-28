@@ -48,7 +48,11 @@ function PollCard({ poll, currentUnitId, canViewDetails }: { poll: Poll, current
     // Prepare chart data
     const chartData = useMemo(() => {
         return poll.options.map((opt, idx) => {
-            const count = votes.filter(v => v.selectedOptionIndex === idx).length;
+            const count = votes.filter(v => {
+                const voteIdx = v.selectedOptionIndex !== undefined ? v.selectedOptionIndex : 
+                               (v.votedOption !== undefined ? v.votedOption : v.optionId);
+                return Number(voteIdx) === idx;
+            }).length;
             const percentage = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
             return {
                 name: opt,
@@ -160,7 +164,7 @@ function PollCard({ poll, currentUnitId, canViewDetails }: { poll: Poll, current
                     </div>
                 )}
 
-                {(isClosed || myVote) && (
+                {(isClosed || myVote || canViewDetails) && (
                     <div className="mt-4 flex-1 flex flex-col justify-end">
                         <div className="mb-3 flex items-center justify-between">
                             <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">

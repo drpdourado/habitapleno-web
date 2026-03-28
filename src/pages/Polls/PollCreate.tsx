@@ -67,7 +67,7 @@ export function PollCreate({ onBack }: { onBack: () => void }) {
 
         setIsSaving(true);
         try {
-            await api.post('/polls', {
+            await api.post('/condo/polls', {
                 title: title.trim(),
                 description: description.trim(),
                 options: validOptions,
