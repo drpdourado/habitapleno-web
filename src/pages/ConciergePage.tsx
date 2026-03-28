@@ -212,7 +212,8 @@ export function ConciergePage() {
                                     label: "ENTRADAS HOJE",
                                     value: accessControl.filter(a => {
                                         const today = new Date().toISOString().split('T')[0];
-                                        return a.status !== 'pendente' && (a.createdAt || '').startsWith(today);
+                                        const dateStr = typeof a.createdAt === 'string' ? a.createdAt : '';
+                                        return a.status !== 'pendente' && dateStr.startsWith(today);
                                     }).length,
                                     icon: <Clock />,
                                     variant: "amber",

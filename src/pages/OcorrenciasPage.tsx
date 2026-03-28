@@ -69,8 +69,8 @@ export function OcorrenciasPage() {
     const filteredOcorrencias = useMemo(() => {
         return visibleOcorrencias.filter(oc => {
             if (filter === 'Todas') return true;
-            if (filter === 'Pendentes') return oc.status === 'Pendente';
-            if (filter === 'Resolvidas') return oc.status === 'Resolvida';
+            if (filter === 'Pendentes') return oc.status === 'Pendente' || oc.status === 'Aberto';
+            if (filter === 'Resolvidas') return oc.status === 'Resolvida' || oc.status === 'Fechado';
             return true;
         });
     }, [visibleOcorrencias, filter]);
@@ -296,7 +296,7 @@ export function OcorrenciasPage() {
                             <div className="flex items-center justify-between mb-4">
                                 <div className="flex gap-2">
                                     <HabitaBadge 
-                                        variant={oc.status === 'Resolvida' ? 'success' : 'warning'} 
+                                        variant={(oc.status === 'Resolvida' || oc.status === 'Fechado') ? 'success' : 'warning'} 
                                         size="xs"
                                     >
                                         {(oc.status || '').toUpperCase()}
@@ -576,7 +576,7 @@ export function OcorrenciasPage() {
                                     <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Status Atual</h4>
                                     <div className="flex items-center gap-4">
                                         <HabitaBadge 
-                                            variant={isDetailOpen.status === 'Resolvida' ? 'success' : 'warning'}
+                                            variant={(isDetailOpen.status === 'Resolvida' || isDetailOpen.status === 'Fechado') ? 'success' : 'warning'}
                                             className="h-10 px-6"
                                         >
                                             {isDetailOpen.status.toUpperCase()}
@@ -598,11 +598,12 @@ export function OcorrenciasPage() {
                                                 onClick={async () => {
                                                     try {
                                                         const target = isDetailOpen!;
-                                                        const novoStatus = target.status === 'Resolvida' ? 'Pendente' : 'Resolvida';
+                                                        const isClosed = target.status === 'Resolvida' || target.status === 'Fechado';
+                                                        const novoStatus = isClosed ? 'Pendente' : 'Resolvida';
                                                         const updated: Ocorrencia = {
                                                             ...target,
-                                                            status: novoStatus as 'Pendente' | 'Resolvida',
-                                                            dataResolucao: novoStatus === 'Resolvida' ? new Date().toISOString() : undefined
+                                                            status: novoStatus as any,
+                                                            dataResolucao: !isClosed ? new Date().toISOString() : undefined
                                                         };
                                                         await updateOcorrencia(updated);
                                                         setIsDetailOpen(updated);

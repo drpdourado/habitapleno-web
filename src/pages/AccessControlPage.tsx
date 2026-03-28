@@ -193,9 +193,10 @@ export function AccessControlPage() {
         const pendingPackages = safePackages.filter((p: any) => p.status === 'aguardando').length;
 
         const today = new Date().toISOString().split('T')[0];
-        const deliveredToday = safePackages.filter((p: any) =>
-            p.status === 'entregue' && p.pickupDate?.startsWith(today)
-        ).length;
+        const deliveredToday = safePackages.filter((p: any) => {
+            const dateStr = typeof p.pickupDate === 'string' ? p.pickupDate : '';
+            return p.status === 'entregue' && dateStr.startsWith(today);
+        }).length;
 
         return { activeVisitors, pendingPackages, deliveredToday };
     }, [accessControl, visiblePackages]);
