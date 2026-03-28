@@ -1,8 +1,11 @@
 // src/services/api.ts
 import axios from 'axios';
 
+// Vite exige o uso de import.meta.env para acessar o .env
+const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 const api = axios.create({
-  baseURL: 'http://localhost:3000/api',
+  baseURL: `${apiBaseUrl.replace(/\/+$/, '')}/api`,
 });
 
 api.interceptors.request.use((config) => {

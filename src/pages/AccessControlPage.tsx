@@ -122,7 +122,7 @@ export function AccessControlPage() {
 
     // Filterered Access Logic
     const filteredAccess = useMemo(() => {
-        let list = [...accessControl];
+        let list = [...(Array.isArray(accessControl) ? accessControl : [])];
 
         if (!canManageAllAccess && profile?.unitId) {
             list = list.filter((a: any) =>
@@ -157,7 +157,7 @@ export function AccessControlPage() {
     }, [accessControl, viewMode, searchTerm, canManageAllAccess, profile, units]);
 
     const filteredPackages = useMemo(() => {
-        let list = [...(visiblePackages || [])];
+        let list = [...(Array.isArray(visiblePackages) ? visiblePackages : [])];
 
         if (viewMode === 'active') {
             list = list.filter((p: any) => p.status === 'aguardando');
@@ -186,11 +186,14 @@ export function AccessControlPage() {
 
     // KPI Data
     const kpis = useMemo(() => {
-        const activeVisitors = accessControl.filter((a: any) => a.status === 'dentro').length;
-        const pendingPackages = (visiblePackages || []).filter((p: any) => p.status === 'aguardando').length;
+        const safeAccess = Array.isArray(accessControl) ? accessControl : [];
+        const safePackages = Array.isArray(visiblePackages) ? visiblePackages : [];
+
+        const activeVisitors = safeAccess.filter((a: any) => a.status === 'dentro').length;
+        const pendingPackages = safePackages.filter((p: any) => p.status === 'aguardando').length;
 
         const today = new Date().toISOString().split('T')[0];
-        const deliveredToday = (visiblePackages || []).filter((p: any) =>
+        const deliveredToday = safePackages.filter((p: any) =>
             p.status === 'entregue' && p.pickupDate?.startsWith(today)
         ).length;
 

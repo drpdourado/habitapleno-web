@@ -1,24 +1,31 @@
-// Firebase Shim for HabitaPleno
-// This file is a placeholder to prevent 404 errors during migration to Node.js API
-export const auth = { currentUser: null, onAuthStateChanged: () => () => {} };
-export const db = {};
-export const storage = {};
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+import { getStorage } from "firebase/storage";
+import { getAnalytics } from "firebase/analytics";
 
-// Auth functions
-export const getAuth = () => auth;
-export const signInWithEmailAndPassword = async () => ({ user: null });
-export const signOut = async () => {};
-export const onAuthStateChanged = () => () => {};
+// O Vite exige o uso de import.meta.env para acessar o .env
+const firebaseConfig = {
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID // Pode ser undefined no sandbox
+};
 
-// Firestore functions
-export const getFirestore = () => ({});
-export const collection = () => ({});
-export const doc = () => ({});
-export const getDocs = async () => ({ docs: [] });
-export const query = () => ({});
-export const where = () => ({});
+// Inicializa o Firebase
+const app = initializeApp(firebaseConfig);
 
-// App functions
-export const initializeApp = () => ({});
+// Exporta os serviços para usar no resto do app
+export const db = getFirestore(app);
+export const auth = getAuth(app);
+export const storage = getStorage(app);
 
-export default { auth, db, storage };
+// Analytics só inicializa se houver um ID (evita erros no Sandbox)
+if (firebaseConfig.measurementId) {
+    getAnalytics(app);
+}
+
+export default app;

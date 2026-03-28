@@ -250,6 +250,7 @@ const UnitsPage = () => {
         nome: string;
         email?: string;
         tipo: 'inquilino' | 'proprietario' | 'sem_cadastro';
+        hasAccount: boolean;
         inquilino?: UserProfile;
         proprietario?: UserProfile;
     } => {
@@ -277,7 +278,7 @@ const UnitsPage = () => {
                     nome: regInquilino.name || regInquilino.email, 
                     email: regInquilino.email, 
                     tipo: 'inquilino', 
-                    hasAccount: true, // Adicionado
+                    hasAccount: true,
                     inquilino: regInquilino, 
                     proprietario: regProprietario 
                 };
@@ -287,7 +288,7 @@ const UnitsPage = () => {
                     nome: unit.tenantName, 
                     email: unit.tenantEmail, 
                     tipo: 'inquilino', 
-                    hasAccount: false, // Adicionado
+                    hasAccount: false,
                     proprietario: regProprietario 
                 };
             }
@@ -299,7 +300,7 @@ const UnitsPage = () => {
                 nome: regProprietario.name || regProprietario.email, 
                 email: regProprietario.email, 
                 tipo: 'proprietario', 
-                hasAccount: true, // Adicionado
+                hasAccount: true,
                 proprietario: regProprietario, 
                 inquilino: regInquilino 
             };
@@ -308,9 +309,9 @@ const UnitsPage = () => {
         if (unit?.ownerName) {
             return { 
                 nome: unit.ownerName, 
-                email: unit.ownerEmail, // Adicionado
-                tipo: 'proprietario', // Mudado de sem_cadastro para proprietario para simplificar a cor
-                hasAccount: false, // Adicionado
+                email: unit.ownerEmail,
+                tipo: 'proprietario',
+                hasAccount: false,
                 inquilino: regInquilino 
             };
         }
@@ -318,10 +319,16 @@ const UnitsPage = () => {
         // Absolute fallback: first linked user found
         if (vinculados.length > 0) {
             const first = vinculados[0];
-            return { nome: first.name || first.email, email: first.email, tipo: 'proprietario', proprietario: first };
+            return { 
+                nome: first.name || first.email, 
+                email: first.email, 
+                tipo: 'proprietario', 
+                hasAccount: true,
+                proprietario: first 
+            };
         }
 
-        return { nome: 'Sem titular', tipo: 'sem_cadastro' };
+        return { nome: 'Sem titular', tipo: 'sem_cadastro', hasAccount: false };
     };
 
     const startEditing = (unit: Unit) => {

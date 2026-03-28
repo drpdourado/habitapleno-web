@@ -204,7 +204,7 @@ const DashboardPage = () => {
     const areas: Area[] = dashboardData?.areas || [];
     const reservas: Reserva[] = dashboardData?.reservas || [];
 
-    const showToast = (window as any).showToast || ((m: any) => console.log(m));
+    const showToast = (window as any).showToast || (() => {});
     const canSeeMural = isAdmin || hasPermission(accessProfile, 'mural', 'own');
     const canSeeFinancial = isAdmin || hasPermission(accessProfile, 'financial', 'all');
     const canSeeHistory = isAdmin || hasPermission(accessProfile, 'history', 'all');
@@ -590,7 +590,7 @@ const DashboardPage = () => {
         window.addEventListener('appinstalled', () => {
             setDeferredPrompt(null);
             setShowInstallBanner(false);
-            console.log('HabitaPleno instalado com sucesso!');
+
         });
         return () => window.removeEventListener('beforeinstallprompt', handler);
     }, []);
@@ -598,8 +598,8 @@ const DashboardPage = () => {
     const handleInstallClick = async () => {
         if (!deferredPrompt) return;
         deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        console.log(`User response to install prompt: ${outcome}`);
+        await deferredPrompt.userChoice;
+
         setDeferredPrompt(null);
         setShowInstallBanner(false);
     };

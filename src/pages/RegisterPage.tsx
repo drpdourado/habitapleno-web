@@ -31,7 +31,7 @@ const RegisterPage: React.FC = () => {
 
         // 0. Safety Cleanup: Clear any developer session context
         localStorage.clear();
-        console.log("Sessão limpa para novo registro.");
+
 
         try {
             // 1. Create User in Auth
@@ -39,7 +39,7 @@ const RegisterPage: React.FC = () => {
             const user = userCredential.user;
 
             // Log and Safety Check
-            console.log(`Iniciando Onboarding para o Tenant: ${user.uid}`);
+
             if (user.uid === dbUtils.DEFAULT_CONDO_ID) {
                 throw new Error("Conflito de ID: Este usuário coincide com o condomínio mestre de desenvolvimento.");
             }

@@ -482,9 +482,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem('@HabitaPleno:activeCondoId', id);
       window.location.reload();
     },
-    switchEnvironment: (id: string) => {
+    switchEnvironment: (_id: string) => {
       // Mock for now or implement if backend supports it
-      console.log("Switching environment to:", id);
+
     }
   };
 

@@ -62,8 +62,13 @@ export function ConciergePage() {
                 api.get('/access-control'),
                 api.get('/units')
             ]);
-            setAccessControl(accessRes.data || []);
-            setUnits(unitsRes.data || []);
+            
+            // Handle both standard axios ({ data: [...] }) and our ApiResponse ({ data: { success: true, data: [...] } })
+            const accessArray = Array.isArray(accessRes.data) ? accessRes.data : (accessRes.data?.data || []);
+            const unitsArray = Array.isArray(unitsRes.data) ? unitsRes.data : (unitsRes.data?.data || []);
+            
+            setAccessControl(accessArray);
+            setUnits(unitsArray);
         } catch (error) {
             console.error('Erro ao buscar dados:', error);
             toast.error('Erro ao carregar dados do concierge.');
@@ -77,7 +82,7 @@ export function ConciergePage() {
     }, []);
 
     const authorizations = useMemo(() => {
-        let list = [...(accessControl || [])];
+        let list = [...(Array.isArray(accessControl) ? accessControl : [])];
 
         if (subTab === 'ativos') {
             list = list.filter(a => a.status === 'pendente' || a.status === 'dentro');
