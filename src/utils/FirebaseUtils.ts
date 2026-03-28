@@ -109,6 +109,9 @@ export const saveFirestoreCondominium = async (tenantId: string, data: any) => {
 };
 
 export const saveAccessProfile = async (profile: any) => {
+    if (profile.id && !profile.id.startsWith('profile_')) {
+        return api.put(`/profiles/${profile.id}`, profile);
+    }
     return api.post('/profiles', profile);
 };
 
