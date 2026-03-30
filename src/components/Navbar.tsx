@@ -53,7 +53,7 @@ const Navbar = () => {
   }, [isSuperAdmin, hasVinculos]);
 
   // Precisão no design:
-  const words = (settings.systemName || "HabitaPleno").split(' ');
+  const words = (settings.condoName || settings.systemName || "HabitaPleno").split(' ');
   const prefix = words.length > 1 ? words.slice(0, 2).join(' ') : words[0];
   const suffix = words.length > 2 ? words.slice(2).join(' ') : (words.length === 2 ? words[1] : '');
 
@@ -271,7 +271,7 @@ const Navbar = () => {
                 <div className="flex flex-col items-start leading-none min-w-0">
                   <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Ambiente</span>
                   <span className="text-[10px] font-black text-slate-200 uppercase tracking-tight truncate w-full block">
-                    {settings.systemName || settings.condoName || 'Produção'}
+                    {settings.condoName || settings.systemName || settings.name || 'Produção'}
                   </span>
                 </div>
               </div>

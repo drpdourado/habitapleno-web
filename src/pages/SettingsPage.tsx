@@ -33,7 +33,8 @@ const SettingsPage = () => {
     const canManageSettings = hasPermission(accessProfile, 'settings', 'all');
 
     const [gasPriceInput, setGasPriceInput] = useState(settings?.gasPrice?.toString() || '0');
-    const [condoNameInput, setCondoNameInput] = useState(settings?.condoName || '');
+    const [condoNameInput, setCondoNameInput] = useState(settings?.name || settings?.condoName || '');
+    const [systemNameInput, setSystemNameInput] = useState(settings?.systemName || '');
     const [cnpjInput, setCnpjInput] = useState(settings?.cnpj || '');
     const [addressInput, setAddressInput] = useState(settings?.address || '');
     const [pixKeyInput, setPixKeyInput] = useState(settings?.pixKey || '');
@@ -89,7 +90,8 @@ const SettingsPage = () => {
     // Sync local state when settings evolve
     React.useEffect(() => {
         setGasPriceInput(settings?.gasPrice?.toString() || '0');
-        setCondoNameInput(settings?.condoName || '');
+        setCondoNameInput(settings?.name || settings?.condoName || '');
+        setSystemNameInput(settings?.systemName || '');
         setCnpjInput(settings?.cnpj || '');
         setAddressInput(settings?.address || '');
         setPixKeyInput(settings?.pixKey || '');
@@ -99,10 +101,16 @@ const SettingsPage = () => {
 
     const handleSaveGlobalParams = async () => {
         try {
+            const payload = { ...settings };
+            delete payload.modules;
+            delete payload.activePlan;
+            
             await updateSettings({
-                ...settings,
+                ...payload,
                 gasPrice: parseFloat(gasPriceInput) || 0,
+                name: condoNameInput,
                 condoName: condoNameInput,
+                systemName: systemNameInput,
                 cnpj: cnpjInput,
                 address: addressInput,
                 pixKey: pixKeyInput,
@@ -524,9 +532,14 @@ const SettingsPage = () => {
 
                                                         try {
                                                             const downloadUrl = await dbUtils.uploadFile(file, logoPath);
-                                                            const updatedSettings = { ...settings, logotipoUrl: downloadUrl };
-                                                            await updateSettings(updatedSettings);
-                                                            await dbUtils.saveFirestoreCondominium(tenantId, { logotipoUrl: downloadUrl });
+                                                            
+                                                            // O updateSettings no backend já cuida de espelhar o logotipoUrl 
+                                                            // entre as coleções 'settings' e 'condominios' se estiver no payload.
+                                                            await updateSettings({ 
+                                                                ...settings, 
+                                                                logotipoUrl: downloadUrl 
+                                                            });
+                                                            
                                                             showToast('Logotipo atualizado com sucesso!', 'success');
                                                         } catch (error: any) {
                                                             console.error("Erro ao fazer upload do logo:", error);
@@ -560,8 +573,8 @@ const SettingsPage = () => {
                                     <HabitaInput
                                         label="Nome do Sistema (Dashboard)"
                                         placeholder="Ex: HabitaPleno"
-                                        value={settings?.systemName || ''}
-                                        onChange={(e) => updateSettings({ ...settings, systemName: e.target.value })}
+                                        value={systemNameInput}
+                                        onChange={(e) => setSystemNameInput(e.target.value)}
                                         className="font-black text-slate-800"
                                     />
                                     <HabitaInput

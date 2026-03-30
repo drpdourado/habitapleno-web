@@ -46,7 +46,14 @@ export function BookingPage() {
     const [cancelingReserva, setCancelingReserva] = useState<Reserva | null>(null);
 
     // Context helpers
-    const userUnitId = useMemo(() => profile?.unitId || user?.email?.split('@')[0] || 'Unknown', [profile, user]);
+    const userUnitId = useMemo(() => {
+        if (profile?.unitId) return profile.unitId;
+        if (user && user.vinculos && user.vinculos.length > 0) {
+            const v = user.vinculos.find((v: any) => v.condominiumId === profile?.condominiumId) || user.vinculos[0];
+            if (v?.unitId) return v.unitId;
+        }
+        return user?.email?.split('@')[0] || 'Unknown';
+    }, [profile, user]);
     const myReservations = useMemo(() =>
         reservas.filter(r => r.unitId === userUnitId)
             .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()),

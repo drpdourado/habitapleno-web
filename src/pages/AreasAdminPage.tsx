@@ -32,7 +32,7 @@ export function AreasAdminPage() {
     const { isAdmin, accessProfile } = useAuth();
     const canManage = isAdmin || hasPermission(accessProfile, 'areas', 'all');
     const { showToast } = useToast();
-    const { areas, addArea, updateArea, deleteArea, reservas, updateReserva } = useApp();
+    const { areas, addArea, updateArea, deleteArea, reservas, updateReserva, users, units } = useApp();
 
     // UI state
     const [activeMainTab, setActiveMainTab] = useState<MainTab>('solicitacoes');
@@ -152,7 +152,7 @@ export function AreasAdminPage() {
         try {
             await updateReserva({ ...res, status: 'confirmada' });
 
-            showToast(`Reserva da unidade ${res.unitId} aprovada! Os moradores serão notificados.`, 'success');
+            showToast(`Reserva da unidade ${getDisplayUnitId(res.unitId)} aprovada! Os moradores serão notificados.`, 'success');
         } catch (error) {
             showToast('Erro ao aprovar reserva.', 'error');
         }
@@ -172,7 +172,7 @@ export function AreasAdminPage() {
                 justificativa: rejectionJustification
             });
 
-            showToast(`Reserva da unidade ${reservaToReject.unitId} rejeitada. O morador será notificado.`, 'info');
+            showToast(`Reserva da unidade ${getDisplayUnitId(reservaToReject.unitId)} rejeitada. O morador será notificado.`, 'info');
             setReservaToReject(null);
             setRejectionJustification('');
         } catch (error) {
@@ -181,6 +181,37 @@ export function AreasAdminPage() {
     };
 
     const getAreaName = (id: string) => areas.find(a => a.id === id)?.nome || 'Área Desconhecida';
+
+    const getDisplayUnitId = (rawUnitId: string) => {
+        if (!rawUnitId) return rawUnitId;
+        
+        // 1. Check users (if populated)
+        if (users && users.length > 0) {
+            const matchedUser = users.find(u => 
+                u.id === rawUnitId || 
+                u.email === rawUnitId || 
+                (u.email && u.email.split('@')[0] === rawUnitId)
+            );
+            if (matchedUser && matchedUser.vinculos) {
+                const vinculo = matchedUser.vinculos.find((v: any) => v.condominiumId === accessProfile?.condominiumId);
+                if (vinculo && vinculo.unitId) return vinculo.unitId;
+            }
+        }
+
+        // 2. Check units
+        if (units && units.length > 0) {
+            const matchedUnit = units.find(u => 
+                u.id === rawUnitId || 
+                u.ownerEmail === rawUnitId || 
+                u.ownerEmail?.split('@')[0] === rawUnitId ||
+                u.tenantEmail === rawUnitId ||
+                u.tenantEmail?.split('@')[0] === rawUnitId
+            );
+            if (matchedUnit) return matchedUnit.id; // return unit number
+        }
+
+        return rawUnitId;
+    };
 
     const renderReservationsTable = (data: Reserva[], showActions: boolean = false) => {
         const isSindicoOrAdmin = isAdmin || hasPermission(accessProfile, 'areas', 'all');
@@ -212,11 +243,11 @@ export function AreasAdminPage() {
                                             <div className="flex justify-between items-start w-full">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-[11px] border border-indigo-100/50 shrink-0">
-                                                        {res.unitId}
+                                                        {getDisplayUnitId(res.unitId)}
                                                     </div>
                                                     <div className="flex flex-col min-w-0">
                                                         <span className="font-bold text-slate-900 text-sm leading-tight truncate">{getAreaName(res.areaId)}</span>
-                                                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest truncate">Unidade {res.unitId}</span>
+                                                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest truncate">Unidade {getDisplayUnitId(res.unitId)}</span>
                                                     </div>
                                                 </div>
                                                 <div className="text-right shrink-0">
@@ -274,7 +305,7 @@ export function AreasAdminPage() {
                                     {/* Desktop Layout */}
                                     <HabitaTD className="hidden md:table-cell">
                                         <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-[10px] border border-indigo-100/50 shrink-0">
-                                            {res.unitId}
+                                            {getDisplayUnitId(res.unitId)}
                                         </div>
                                     </HabitaTD>
                                     <HabitaTD className="hidden md:table-cell">
@@ -527,7 +558,7 @@ export function AreasAdminPage() {
                                         ocupacaoProxima.map(res => (
                                             <div key={res.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:shadow-indigo-100/30 transition-all duration-500 group relative overflow-hidden flex flex-col">
                                                 <div className="flex justify-between items-start mb-4 relative z-10">
-                                                    <div className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-[8px] font-black border border-indigo-100 shadow-sm">UNID: {res.unitId}</div>
+                                                    <div className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-[8px] font-black border border-indigo-100 shadow-sm">UNID: {getDisplayUnitId(res.unitId)}</div>
                                                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex flex-col items-end">
                                                         <span>{new Date(res.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit' })}</span>
                                                         <span className="text-[8px] opacity-60 uppercase">{new Date(res.data + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'short' })}</span>
@@ -664,7 +695,7 @@ export function AreasAdminPage() {
             >
                 <div className="space-y-6">
                     <div className="flex items-center gap-4 bg-slate-50/50 p-5 rounded-2xl border border-slate-100/50">
-                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-indigo-600 shadow-sm font-black text-[10px] border border-slate-100">UN: {reservaToReject?.unitId}</div>
+                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-indigo-600 shadow-sm font-black text-[10px] border border-slate-100">UN: {reservaToReject ? getDisplayUnitId(reservaToReject.unitId) : ''}</div>
                         <div>
                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Espaço solicitado</p>
                             <p className="text-xs font-black text-slate-800">{getAreaName(reservaToReject?.areaId || '')}</p>
