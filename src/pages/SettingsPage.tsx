@@ -572,7 +572,7 @@ const SettingsPage = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <HabitaInput
                                         label="Nome do Sistema (Dashboard)"
-                                        placeholder="Ex: HabitaPleno"
+                                        placeholder="Ex: HabitarPleno"
                                         value={systemNameInput}
                                         onChange={(e) => setSystemNameInput(e.target.value)}
                                         className="font-black text-slate-800"
@@ -865,7 +865,7 @@ const SettingsPage = () => {
             <HabitaModal
                 isOpen={isUpgradeModalOpen}
                 onClose={() => setIsUpgradeModalOpen(false)}
-                title="Upgrade do Plano HabitaPleno"
+                title="Upgrade do Plano HabitarPleno"
                 size="xl"
             >
                 <div className="py-2 space-y-8">

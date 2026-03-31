@@ -140,7 +140,7 @@ const DesignSystemPage: React.FC = () => {
             <HabitaHeading 
               level={1} 
               icon={<Palette size={48} className="text-white" />}
-              subtitle="Especificações Técnicas e Guia de Componentes do Design System Habitapleno"
+              subtitle="Especificações Técnicas e Guia de Componentes do Design System Habitarpleno"
               subtitleClassName="text-indigo-100 font-medium"
               className="text-white border-none p-0 mb-2"
             >
@@ -767,7 +767,7 @@ const DesignSystemPage: React.FC = () => {
       <div className="flex justify-between items-center px-4">
         <div className="flex items-center gap-2">
             <Shield size={16} className="text-slate-300" />
-            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">© 2026 Habitapleno - Design System Assets</span>
+            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">© 2026 Habitarpleno - Design System Assets</span>
         </div>
         <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
             Habita Design System | Doc v1.1

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Habitar Pleno</string>
+    <string name="title_activity_main">Habitar Pleno</string>
+    <string name="package_name">com.habitarpleno.app</string>
+    <string name="custom_url_scheme">com.habitarpleno.app</string>
+</resources>

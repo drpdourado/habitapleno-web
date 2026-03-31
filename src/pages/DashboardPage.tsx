@@ -104,6 +104,13 @@ const DashboardPage = () => {
     const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
     const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
     const [showInstallBanner, setShowInstallBanner] = useState(false);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // Referência e Seleções
     const [activeRefMonth, setActiveRefMonth] = useState('');
@@ -615,7 +622,7 @@ const DashboardPage = () => {
                         <div className="absolute inset-0 bg-indigo-500/10 blur-xl animate-pulse rounded-full" />
                     </div>
                     <div className="flex flex-col items-center gap-2">
-                        <p className="text-[12px] font-black uppercase tracking-[0.2em] text-indigo-600/70">HabitaPleno</p>
+                        <p className="text-[12px] font-black uppercase tracking-[0.2em] text-indigo-600/70">HabitarPleno</p>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest animate-pulse">Sincronizando Dados...</p>
                     </div>
                 </div>
@@ -639,7 +646,7 @@ const DashboardPage = () => {
                             <div>
                                 <h3 className="text-sm font-black uppercase tracking-tight leading-none mb-1">Acesso Rápido</h3>
                                 <p className="text-[11px] font-bold text-indigo-100 opacity-90 uppercase tracking-widest max-w-[200px] md:max-w-none">
-                                    Instale o HabitaPleno para a melhor experiência no seu celular.
+                                    Instale o HabitarPleno para a melhor experiência no seu celular.
                                 </p>
                             </div>
                         </div>
@@ -665,7 +672,13 @@ const DashboardPage = () => {
                 </div>
             )}
 
-            <HabitaCard className="max-w-[1700px] mx-auto min-h-[90vh] border-none md:border md:shadow-sm" padding="lg">
+            <HabitaCard 
+                className={cn(
+                    "max-w-[1700px] mx-auto min-h-[90vh]",
+                    isMobile ? "bg-transparent border-none shadow-none p-2" : "md:border md:shadow-sm"
+                )} 
+                padding={isMobile ? "none" : "lg"}
+            >
                 {/* 1. HEADER UNIFICADO (Saudação + Controles + Atalhos) */}
                 <div className="space-y-6 mb-6 pb-6 border-b border-slate-200">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -1799,7 +1812,7 @@ const DashboardPage = () => {
                                                 value={generatePixPayload(
                                                     settings.pixKey || '',
                                                     calculateRecordTotal(selectedUnitForPix),
-                                                    settings.condoName || 'HabitaPleno'
+                                                    settings.condoName || 'HabitarPleno'
                                                 )}
                                                 size={200}
                                                 level="H"
@@ -1823,7 +1836,7 @@ const DashboardPage = () => {
                                                     const payload = generatePixPayload(
                                                         settings.pixKey || '',
                                                         calculateRecordTotal(selectedUnitForPix),
-                                                        settings.condoName || 'HabitaPleno'
+                                                        settings.condoName || 'HabitarPleno'
                                                     );
                                                     navigator.clipboard.writeText(payload);
                                                     setCopied(true);
@@ -1909,7 +1922,7 @@ const DashboardPage = () => {
                                                                 value={wizardData.condoName}
                                                                 onChange={e => setWizardData({ ...wizardData, condoName: e.target.value })}
                                                                 className="w-full px-4 h-10 bg-slate-50 border border-slate-300 rounded focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-all text-slate-800 font-bold"
-                                                                placeholder="HabitaPleno"
+                                                                placeholder="HabitarPleno"
                                                             />
                                                         </div>
                                                         <div className="relative group">

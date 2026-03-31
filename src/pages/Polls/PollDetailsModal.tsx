@@ -192,7 +192,7 @@ export function PollDetailsModal({ poll, isOpen, onClose }: PollDetailsModalProp
             doc.setFont('helvetica', 'italic');
             doc.setTextColor(slate500[0], slate500[1], slate500[2]);
             doc.text(
-                `Relatório gerado automaticamente pelo sistema ${settings?.systemName || 'HabitaPleno'} em ${new Date().toLocaleString('pt-BR')}`,
+                `Relatório gerado automaticamente pelo sistema ${settings?.systemName || 'HabitarPleno'} em ${new Date().toLocaleString('pt-BR')}`,
                 margin,
                 finalY
             );

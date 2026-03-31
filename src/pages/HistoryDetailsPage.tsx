@@ -958,7 +958,7 @@ Total................... ${formatCurrency(total).replace('R$', 'R$ ')}`;
                     <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex gap-3">
                         <MessageCircle size={20} className="text-amber-500 shrink-0" />
                         <p className="text-[10px] text-amber-800 font-bold leading-tight uppercase tracking-tight">
-                            <strong>Dica HabitaPleno:</strong> Após o pagamento, envie o comprovante pelo WhatsApp do condomínio para dar baixa no sistema.
+                            <strong>Dica HabitarPleno:</strong> Após o pagamento, envie o comprovante pelo WhatsApp do condomínio para dar baixa no sistema.
                         </p>
                     </div>
                 </div>

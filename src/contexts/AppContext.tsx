@@ -231,7 +231,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
   const [tenantId, setTenantId] = useState("");
   const [settings, setSettings] = useState<Setting>({
-    condoName: "HabitaPleno",
+    condoName: "HabitarPleno",
     currentRefMonth: "",
     gasPrice: 0,
     dueDay: 10,
@@ -269,7 +269,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
 
   const reloadCondoData = useCallback(async () => {
-    const condoId = localStorage.getItem('@HabitaPleno:activeCondoId');
+    const condoId = localStorage.getItem('@HabitarPleno:activeCondoId');
     if (!condoId) return;
 
     try {
@@ -318,8 +318,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [setError]);
 
   useEffect(() => {
-    const condoId = localStorage.getItem('@HabitaPleno:activeCondoId');
-    const token = localStorage.getItem('@HabitaPleno:token');
+    const condoId = localStorage.getItem('@HabitarPleno:activeCondoId');
+    const token = localStorage.getItem('@HabitarPleno:token');
 
     if (token && condoId) {
       setTenantId(condoId);
@@ -479,7 +479,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     saveCurrentReading: async (id: string, r: any) => { await api.post(`/units/${id}/reading`, r); await reloadCondoData(); },
     saveHistoryRecord: async (d: any) => { await api.post('/history', d); await reloadCondoData(); },
     switchTenant: (id: string) => {
-      localStorage.setItem('@HabitaPleno:activeCondoId', id);
+      localStorage.setItem('@HabitarPleno:activeCondoId', id);
       window.location.reload();
     },
     switchEnvironment: (_id: string) => {

@@ -102,7 +102,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
                         <div className="inline-block p-3 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 shadow-2xl animate-in zoom-in duration-700">
                             <img
                                 src="/LogoSistema.png"
-                                alt="Logo HabitaPleno"
+                                alt="Logo HabitarPleno"
                                 className="h-16 lg:h-20 w-auto object-contain drop-shadow-2xl"
                             />
                         </div>

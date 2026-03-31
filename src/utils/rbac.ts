@@ -44,7 +44,7 @@ export const hasPermission = (profile: any, module: string, level: string = 'all
   // Perfil administrador tem tudo (Verifica por role ou flag isAdmin)
   if (profile.role === 'admin' || profile.role === 'superadmin' || profile.isAdmin === true) return true;
   
-  if (profile.email === 'admin@habitapleno.com.br') return true; // Somente o proprietário da plataforma como fallback seguro
+  if (profile.email === 'admin@habitarpleno.com.br') return true; // Somente o proprietário da plataforma como fallback seguro
   
   // No legado o perfil de acesso ficava em profile.accessProfile ou era o próprio profile
   const permissions = profile.permissions || profile.accessProfile?.permissions;

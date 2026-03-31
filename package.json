@@ -1,5 +1,5 @@
 {
-  "name": "habitapleno-web",
+  "name": "habitarpleno-web",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.0",
+    "@capacitor/cli": "^8.3.0",
+    "@capacitor/core": "^8.3.0",
     "axios": "^1.13.6",
     "clsx": "^2.1.1",
     "firebase": "^12.11.0",

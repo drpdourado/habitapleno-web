@@ -68,7 +68,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem('@HabitaPleno:token');
+    const token = localStorage.getItem('@HabitarPleno:token');
     if (token) {
       reloadNotifications();
     }

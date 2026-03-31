@@ -157,7 +157,7 @@ export function CondosPage() {
                             <div className="space-y-4">
                                 <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Console de SuperAdmin</h1>
                                 <p className="text-slate-500 max-w-sm font-semibold leading-relaxed text-sm">
-                                    Apenas o administrador global da plataforma HabitaPleno pode gerenciar e provisionar novos ambientes SaaS.
+                                    Apenas o administrador global da plataforma HabitarPleno pode gerenciar e provisionar novos ambientes SaaS.
                                 </p>
                             </div>
                             <HabitaButton

@@ -12,7 +12,7 @@ import api from '../services/api';
 
 // --- Constants ---
 export const DEFAULT_CONDO_ID = 'dev-condo';
-export const currentCondominiumId = () => localStorage.getItem('@HabitaPleno:activeCondoId') || DEFAULT_CONDO_ID;
+export const currentCondominiumId = () => localStorage.getItem('@HabitarPleno:activeCondoId') || DEFAULT_CONDO_ID;
 
 // --- Types ---
 export interface UserProfile {

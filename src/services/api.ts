@@ -10,8 +10,8 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   // Pega o token que o Login acabou de salvar
-  const token = localStorage.getItem('@HabitaPleno:token');
-  const condoId = localStorage.getItem('@HabitaPleno:activeCondoId');
+  const token = localStorage.getItem('@HabitarPleno:token');
+  const condoId = localStorage.getItem('@HabitarPleno:activeCondoId');
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

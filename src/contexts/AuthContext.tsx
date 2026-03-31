@@ -56,12 +56,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userData = response.data?.data ?? response.data;
       if (userData) {
         setUser(userData);
-        localStorage.setItem('@HabitaPleno:user', JSON.stringify(userData));
+        localStorage.setItem('@HabitarPleno:user', JSON.stringify(userData));
         
         // Global window stubs (Compatibilidade Legada)
         if (typeof window !== 'undefined') {
-          const isUserAdmin = userData.role === 'admin' || userData.role === 'superadmin' || userData.isAdmin === true || userData.email === 'admin@habitapleno.com.br';
-          const isUserSuper = userData.role === 'superadmin' || userData.email === 'admin@habitapleno.com.br';
+          const isUserAdmin = userData.role === 'admin' || userData.role === 'superadmin' || userData.isAdmin === true || userData.email === 'admin@habitarpleno.com.br';
+          const isUserSuper = userData.role === 'superadmin' || userData.email === 'admin@habitarpleno.com.br';
           
           (window as any).authContext = {
             user: userData,
@@ -80,8 +80,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const initializeAuth = async () => {
-      const storedUser = localStorage.getItem('@HabitaPleno:user');
-      const token = localStorage.getItem('@HabitaPleno:token');
+      const storedUser = localStorage.getItem('@HabitarPleno:user');
+      const token = localStorage.getItem('@HabitarPleno:token');
       
       if (token) {
         if (storedUser) {
@@ -91,8 +91,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             
             // Global window stubs (Compatibilidade Legada)
             if (typeof window !== 'undefined') {
-              const isUserAdmin = parsedUser.role === 'admin' || parsedUser.role === 'superadmin' || parsedUser.isAdmin === true || parsedUser.email === 'admin@habitapleno.com.br';
-              const isUserSuper = parsedUser.role === 'superadmin' || parsedUser.email === 'admin@habitapleno.com.br';
+              const isUserAdmin = parsedUser.role === 'admin' || parsedUser.role === 'superadmin' || parsedUser.isAdmin === true || parsedUser.email === 'admin@habitarpleno.com.br';
+              const isUserSuper = parsedUser.role === 'superadmin' || parsedUser.email === 'admin@habitarpleno.com.br';
 
               (window as any).authContext = {
                 user: parsedUser,
@@ -124,10 +124,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const condoId = cId || (userData as any)?.condominiumId;
 
     if (token) {
-      localStorage.setItem('@HabitaPleno:token', token);
-      if (condoId) localStorage.setItem('@HabitaPleno:activeCondoId', condoId);
+      localStorage.setItem('@HabitarPleno:token', token);
+      if (condoId) localStorage.setItem('@HabitarPleno:activeCondoId', condoId);
       if (userData) {
-        localStorage.setItem('@HabitaPleno:user', JSON.stringify(userData));
+        localStorage.setItem('@HabitarPleno:user', JSON.stringify(userData));
         setUser(userData);
       }
       return; 
@@ -154,7 +154,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const isAdmin = useMemo(() => {
-    return user?.role === 'admin' || user?.role === 'superadmin' || (user as any)?.isAdmin === true || user?.email === 'admin@habitapleno.com.br';
+    return user?.role === 'admin' || user?.role === 'superadmin' || (user as any)?.isAdmin === true || user?.email === 'admin@habitarpleno.com.br';
   }, [user]);
 
   const isSuperAdmin = useMemo(() => {
@@ -163,7 +163,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user.role === 'superadmin' || 
         user.role === 'admin' || 
         (user as any).isAdmin === true || 
-        user.email === 'admin@habitapleno.com.br';
+        user.email === 'admin@habitarpleno.com.br';
     if (isSuperRole) return true;
     
     // Fallback: Check for superadmin module permission in the access profile

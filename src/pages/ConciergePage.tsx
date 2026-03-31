@@ -50,7 +50,7 @@ export function ConciergePage() {
     const [subTab, setSubTab] = useState<'ativos' | 'concluidos'>('ativos');
 
     // Get user from localStorage
-    const user = JSON.parse(localStorage.getItem('@HabitaPleno:user') || '{}');
+    const user = JSON.parse(localStorage.getItem('@HabitarPleno:user') || '{}');
     const isAdmin = user.role === 'admin' || user.role === 'master' || user.role === 'adm';
     const isConcierge = user.role === 'concierge' || user.role === 'zelador' || user.role === 'operator';
     const hasWritePermission = isAdmin || isConcierge;
