@@ -512,7 +512,7 @@ Total................... ${formatCurrency(total).replace('R$', 'R$ ')}`;
                     <HabitaTable 
                         responsive 
                         mobileVariant="list"
-                        containerClassName="border border-slate-200 shadow-sm rounded-2xl overflow-hidden bg-white"
+                        containerClassName="border border-slate-200 shadow-sm rounded-2xl overflow-visible bg-white"
                     >
                         <HabitaTHead>
                             <HabitaTR>

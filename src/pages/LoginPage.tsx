@@ -28,15 +28,15 @@ interface LoginPageProps {
     onRetry?: () => void;
 }
 
-const LoginPage: React.FC<LoginPageProps> = ({ 
-    isLoading: isExternalLoading = false, 
+const LoginPage: React.FC<LoginPageProps> = ({
+    isLoading: isExternalLoading = false,
     loaderMessage = "Autenticando...",
     showRetry = false,
     onRetry
 }) => {
     const { signIn, resetPassword } = useAuth();
     const { showToast } = useNotification();
-    
+
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -91,21 +91,19 @@ const LoginPage: React.FC<LoginPageProps> = ({
                 <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px] animate-pulse delay-700"></div>
 
                 {/* Noise Pattern Overlay (Local Data URI) */}
-                <div 
+                <div
                     className="absolute inset-0 opacity-15 mix-blend-overlay pointer-events-none z-[1]"
                     style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}
                 ></div>
 
                 <div className="relative z-10 w-full flex flex-col h-full">
-                    {/* Logo Section with subtle animation */}
-                    <div className="mb-6">
-                        <div className="inline-block p-3 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 shadow-2xl animate-in zoom-in duration-700">
-                            <img
-                                src="/LogoSistema.png"
-                                alt="Logo HabitarPleno"
-                                className="h-16 lg:h-20 w-auto object-contain drop-shadow-2xl"
-                            />
-                        </div>
+                    {/* Logo Section without card-like wrapper */}
+                    <div className="mb-8">
+                        <img
+                            src="/LogoSistema.png"
+                            alt="Logo HabitarPleno"
+                            className="h-16 lg:h-24 w-auto object-contain drop-shadow-2xl animate-in zoom-in duration-700"
+                        />
                     </div>
 
                     <div className="max-w-xl space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
@@ -173,23 +171,21 @@ const LoginPage: React.FC<LoginPageProps> = ({
             <div className="w-full lg:w-[45%] bg-white flex flex-col justify-center items-center p-6 lg:p-16 relative z-20 animate-in fade-in slide-in-from-right duration-1000">
                 <div className="w-full max-w-md space-y-10">
 
-                    {/* Mobile Header (Logo + Welcome) */}
-                    <div className="lg:hidden text-center space-y-4 mb-2 flex flex-col items-center">
-                        <div className="inline-block p-3 bg-indigo-50 rounded-2xl mb-2">
-                            <img src="/LogoSistema.png" alt="Logo" className="h-10 w-auto object-contain" />
+                    {/* Unified Header (Logo + Welcome) - No card/box wrapper */}
+                    <div className="flex flex-col items-center text-center space-y-6">
+                        <img 
+                            src="/LogoSistema.png" 
+                            alt="Logo" 
+                            className="h-16 lg:h-24 w-auto object-contain mb-2 drop-shadow-sm" 
+                        />
+                        
+                        <div className="space-y-2">
+                            <div className="flex justify-center mb-4">
+                                <HabitaBadge variant="indigo" size="xs">ACESSO SEGURO</HabitaBadge>
+                            </div>
+                            <HabitaHeading level={2} className="text-3xl font-black text-slate-900 leading-tight">Entrar na plataforma</HabitaHeading>
+                            <p className="text-slate-500 text-sm lg:text-base font-medium">Informe suas credenciais de acesso</p>
                         </div>
-                        <HabitaHeading level={2} className="text-3xl font-black text-slate-900 leading-tight">Entrar na plataforma</HabitaHeading>
-                        <p className="text-slate-500 text-sm font-medium">Informe suas credenciais de acesso</p>
-                    </div>
-
-                    {/* Desktop Header */}
-                    <div className="hidden lg:flex flex-col items-center text-center space-y-2">
-                        <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-2 shadow-sm border border-indigo-100">
-                            <LogIn size={32} />
-                        </div>
-                        <HabitaBadge variant="indigo" size="xs">ACESSO SEGURO</HabitaBadge>
-                        <HabitaHeading level={2} className="text-3xl font-black text-slate-900 leading-tight">Entrar na plataforma</HabitaHeading>
-                        <p className="text-slate-500 text-base font-medium">Informe suas credenciais de acesso</p>
                     </div>
 
                     <HabitaCard variant="white" padding="lg" className="border-slate-100 shadow-xl shadow-slate-200/40">
@@ -276,26 +272,26 @@ const LoginPage: React.FC<LoginPageProps> = ({
                             <div className="absolute inset-0 bg-indigo-500 blur-2xl opacity-20 animate-pulse rounded-full"></div>
                             <img src="/LogoSistema.png" alt="Logo" className="h-20 w-auto object-contain relative z-10" />
                         </div>
-                         <div className="flex flex-col items-center gap-4">
-                              <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                              <p className="mt-2 text-slate-800 font-black uppercase tracking-[0.2em] text-[10px] transition-all animate-pulse">{loaderMessage}</p>
-                              
-                              {showRetry && (
-                                  <div className="flex flex-col items-center gap-3 mt-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
-                                      <p className="text-[10px] text-slate-400 font-bold max-w-[200px] text-center leading-relaxed">
-                                          Isso está demorando mais que o esperado...
-                                      </p>
-                                      <HabitaButton 
-                                          variant="outline" 
-                                          size="sm" 
-                                          onClick={onRetry}
-                                          className="h-10 text-[9px] font-black border-slate-200"
-                                      >
-                                          Recarregar Sistema
-                                      </HabitaButton>
-                                  </div>
-                              )}
-                         </div>
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                            <p className="mt-2 text-slate-800 font-black uppercase tracking-[0.2em] text-[10px] transition-all animate-pulse">{loaderMessage}</p>
+
+                            {showRetry && (
+                                <div className="flex flex-col items-center gap-3 mt-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
+                                    <p className="text-[10px] text-slate-400 font-bold max-w-[200px] text-center leading-relaxed">
+                                        Isso está demorando mais que o esperado...
+                                    </p>
+                                    <HabitaButton
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={onRetry}
+                                        className="h-10 text-[9px] font-black border-slate-200"
+                                    >
+                                        Recarregar Sistema
+                                    </HabitaButton>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}

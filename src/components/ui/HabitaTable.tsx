@@ -30,7 +30,7 @@ export const HabitaTable: React.FC<HabitaTableProps> = ({
   mobileVariant = 'card'
 }) => (
   <div className={cn(
-    "w-full overflow-hidden bg-white rounded-xl border border-slate-200 shadow-sm", 
+    "w-full bg-white rounded-xl border border-slate-200 shadow-sm", 
     (responsive && mobileVariant === 'card') && "bg-transparent border-none shadow-none md:bg-white md:border md:border-slate-200 md:shadow-sm",
     containerClassName
   )}>

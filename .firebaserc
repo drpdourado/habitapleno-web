@@ -1,5 +1,15 @@
 {
   "projects": {
-    "default": "habitapleno-sandbox"
-  }
+    "default": "condomanager-e1390"
+  },
+  "targets": {
+    "condomanager-e1390": {
+      "hosting": {
+        "sistema": [
+          "condomanager-e1390"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
