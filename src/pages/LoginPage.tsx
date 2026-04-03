@@ -163,7 +163,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
 
                     <div className="mt-auto pt-10 flex items-center justify-between border-t border-white/5">
                         <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em] opacity-60">
-                            © 2026 Habita Pleno • Gestão Condominial
+                            © 2026 Habitar Pleno • Gestão Condominial
                         </p>
                     </div>
                 </div>
@@ -262,7 +262,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
                         </Link>
 
                         <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] opacity-60 lg:hidden text-center">
-                            © 2026 Habita Pleno • Gestão Condominial
+                            © 2026 Habitar Pleno • Gestão Condominial
                         </p>
                     </div>
                 </div>

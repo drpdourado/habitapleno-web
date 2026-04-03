@@ -1,7 +1,7 @@
-// Service Worker Robust para HabitaPleno PWA
+// Service Worker Robust para HabitarPleno PWA
 // Em conformidade com os requisitos de auditoria do Chrome (Lighthouse/PWA)
 
-const CACHE_NAME = 'habita-pleno-pwa-v3';
+const CACHE_NAME = 'habitar-pleno-pwa-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',

@@ -1,5 +1,5 @@
 /**
- * Habita Pleno - Firebase Utility Bridge (Shim)
+ * HabitarPleno - Firebase Utility Bridge (Shim)
  * 
  * This file acts as a compatibility layer between the legacy Firebase-dependent 
  * frontend code and the new standalone Node.js API.

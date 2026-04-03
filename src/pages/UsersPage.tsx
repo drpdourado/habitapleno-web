@@ -44,7 +44,7 @@ export interface UserProfile {
 export interface AccessProfile {
     id: string;
     name: string;
-    permissions?: any;
+    permissions?: Record<string, any>;
 }
 
 const UsersPage = () => {
@@ -96,7 +96,7 @@ const UsersPage = () => {
             setProfiles(profilesResult.data.data || []);
             
             const profilesArray = profilesResult.data.data || [];
-            const defaultMorador = profilesArray.find((p: any) => p.id.startsWith('morador-'))?.id;
+            const defaultMorador = profilesArray.find((p: AccessProfile) => p.id.startsWith('morador-'))?.id;
             if (defaultMorador && !formData.profileId) {
                 setFormData(prev => ({ ...prev, profileId: defaultMorador }));
             }
@@ -409,7 +409,7 @@ const UsersPage = () => {
                             <AlertTriangle className="shrink-0 text-amber-500" size={20} />
                             <div>
                                 <strong className="text-white uppercase tracking-widest text-[10px] block mb-1.5">Nota de Segurança Administrativa</strong>
-                                <p>O registro e edição de usuários são operações críticas. Lembre-se que as senhas provisórias devem ser alteradas pelo usuário no primeiro acesso. Para auditorias avançadas ou logs de segurança, utilize o console de gerenciamento técnico do Habita Pleno.</p>
+                                <p>O registro e edição de usuários são operações críticas. Lembre-se que as senhas provisórias devem ser alteradas pelo usuário no primeiro acesso. Para auditorias avançadas ou logs de segurança, utilize o console de gerenciamento técnico do Habitar Pleno.</p>
                             </div>
                         </div>
                     </div>

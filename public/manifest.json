@@ -1,7 +1,7 @@
 {
-    "id": "habitapleno-condomanager",
-    "name": "HabitaPleno | Gestão Condominial",
-    "short_name": "HabitaPleno",
+    "id": "habitarpleno-condomanager",
+    "name": "HabitarPleno | Gestão Condominial",
+    "short_name": "HabitarPleno",
     "description": "Sistema Inteligente de Gestão Condominial",
     "start_url": "/?source=pwa",
     "display": "standalone",

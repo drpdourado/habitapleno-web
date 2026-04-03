@@ -61,11 +61,17 @@ function AppContent() {
   useEffect(() => {
     if (!isStillLoading) {
       setShowTimeoutError(false);
-      return;
     }
+  }, [isStillLoading]);
+
+  useEffect(() => {
+    if (!isStillLoading) return;
+    
+    // Mostra erro caso o sistema demore muito para carregar dados do condomínio
     const timer = setTimeout(() => {
       setShowTimeoutError(true);
-    }, 10000); // 10 seconds
+    }, 10000); // 10 segundos
+    
     return () => clearTimeout(timer);
   }, [isStillLoading]);
 

@@ -6,7 +6,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     const { settings } = useApp();
 
     useEffect(() => {
-        document.title = settings.systemName || 'Gestão Condomínio';
+        document.title = settings.systemName || 'HabitarPleno';
     }, [settings.systemName]);
 
     return (

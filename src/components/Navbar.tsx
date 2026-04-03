@@ -53,7 +53,7 @@ const Navbar = () => {
   }, [isSuperAdmin, hasVinculos]);
 
   // Precisão no design:
-  const words = (settings.condoName || settings.systemName || "HabitaPleno").split(' ');
+  const words = (settings.condoName || settings.systemName || "HabitarPleno").split(' ');
   const prefix = words.length > 1 ? words.slice(0, 2).join(' ') : words[0];
   const suffix = words.length > 2 ? words.slice(2).join(' ') : (words.length === 2 ? words[1] : '');
 
