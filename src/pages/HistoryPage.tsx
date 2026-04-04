@@ -109,11 +109,25 @@ const HistoryPage = () => {
                         </HabitaTHead>
                         <HabitaTBody>
                             {filteredHistory.map((record) => {
-                                const canSeeAll = hasPermission(accessProfile, 'history', 'all');
+                                const canSeeAll = hasPermission(profile, 'history', 'all');
                                 const units = record.units || [];
+                                const linkedUnitIds = profile?.vinculos?.map((v: any) => v.unitId) || [];
+                                
+                                const isMatch = (id1: string | null | undefined, id2: string | null | undefined) => {
+                                    if (!id1 || !id2) return false;
+                                    const a = String(id1).toLowerCase().trim();
+                                    const b = String(id2).toLowerCase().trim();
+                                    return a === b || a.endsWith(`_${b}`) || a.endsWith(`-${b}`) || b.endsWith(`_${a}`) || b.endsWith(`-${a}`);
+                                };
+
+                                const isMyUnit = (unitId: string) => {
+                                    if (isMatch(unitId, profile?.unitId)) return true;
+                                    return linkedUnitIds.some((li: string) => isMatch(unitId, li));
+                                };
+
                                 const visibleUnits = canSeeAll
                                     ? units
-                                    : units.filter(u => u.id === profile?.unitId);
+                                    : units.filter(u => isMyUnit(u.id));
 
                                 const totalCollected = visibleUnits.reduce((acc, unit) => {
                                     return acc + (unit.calculatedTotal || 0);

@@ -153,7 +153,18 @@ const DashboardPage = () => {
     const fetchDashboardData = useCallback(async (selectedMonth?: string) => {
         setIsLoading(true);
         try {
-            const unitParam = profile?.unitId ? `&unitId=${profile.unitId}` : '';
+            // Coletar todos os IDs de unidades vinculadas (próprio + vinculos adicionais)
+            const allMyUnitIds = new Set<string>();
+            if (profile?.unitId) allMyUnitIds.add(String(profile.unitId).trim());
+            if (profile?.vinculos) {
+                profile.vinculos.forEach((v: any) => {
+                    if (v.unitId) allMyUnitIds.add(String(v.unitId).trim());
+                });
+            }
+            
+            const idsList = Array.from(allMyUnitIds).join(',');
+            const unitParam = idsList ? `&unitId=${encodeURIComponent(idsList)}` : '';
+            
             const summaryUrl = selectedMonth 
                 ? `/condo/dashboard-summary?month=${encodeURIComponent(selectedMonth)}${unitParam}` 
                 : `/condo/dashboard-summary${unitParam ? '?' + unitParam.substring(1) : ''}`;
@@ -188,7 +199,7 @@ const DashboardPage = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [isAdmin]);
+    }, [isAdmin, profile?.unitId, JSON.stringify(profile?.vinculos)]);
 
     useEffect(() => {
         fetchDashboardData(activeRefMonth || undefined);
@@ -223,16 +234,35 @@ const DashboardPage = () => {
     const visibleNotices = useMemo(() => notices.filter(n => n.status === 'approved' && !n.isArchived), [notices]);
 
 
-    const myUnit = useMemo(() => {
-        if (!profile?.unitId) return null;
-        return allUnits.find(u => String(u.id).trim() === String(profile.unitId).trim());
-    }, [allUnits, profile?.unitId]);
+    const myUnits = useMemo(() => {
+        const allMyUnitIds = new Set<string>();
+        if (profile?.unitId) allMyUnitIds.add(String(profile.unitId).trim().toLowerCase());
+        if (profile?.vinculos) {
+            profile.vinculos.forEach((v: any) => {
+                if (v.unitId) allMyUnitIds.add(String(v.unitId).trim().toLowerCase());
+            });
+        }
+        
+        const isMatch = (id1: string | null | undefined, id2: string | null | undefined) => {
+            if (!id1 || !id2) return false;
+            const a = String(id1).toLowerCase().trim();
+            const b = String(id2).toLowerCase().trim();
+            return a === b || a.endsWith(`_${b}`) || a.endsWith(`-${b}`) || b.endsWith(`_${a}`) || b.endsWith(`-${a}`);
+        };
+
+        return allUnits.filter(u => {
+            return Array.from(allMyUnitIds).some(id => isMatch(u.id, id));
+        });
+    }, [allUnits, profile?.unitId, profile?.vinculos]);
+
+    const myUnit = myUnits[0] || null;
 
     const isBillPayer = useMemo(() => {
         if (isAdmin) return true;
-        if (!myUnit) return false;
-        return myUnit.residentType !== 'tenant' || (myUnit.ownerId === profile?.uid && !!myUnit.ownerId);
-    }, [isAdmin, myUnit, profile?.uid]);
+        if (myUnits.length === 0) return false;
+        // Se é dono de qualquer uma das unidades vinculadas, ele paga boletos
+        return myUnits.some(u => u.residentType !== 'tenant' || (u.ownerId === profile?.uid && !!u.ownerId));
+    }, [isAdmin, myUnits, profile?.uid]);
 
     // Action Handlers
     const markNoticeAsRead = async (id: string) => {
@@ -281,27 +311,44 @@ const DashboardPage = () => {
 
 
     const myPackages = useMemo(() => {
-        if (!profile?.unitId || !packages) return [];
-        return packages.filter((p: any) =>
-            String(p.unitId).trim() === String(profile.unitId).trim() &&
-            p.status === 'aguardando'
-        );
-    }, [packages, profile?.unitId]);
+        if (myUnits.length === 0 || !packages) return [];
+        const myUnitIds = myUnits.map(u => String(u.id).toLowerCase());
+        
+        const isMatch = (id1: string | null | undefined, id2: string | null | undefined) => {
+            if (!id1 || !id2) return false;
+            const a = String(id1).toLowerCase().trim();
+            const b = String(id2).toLowerCase().trim();
+            return a === b || a.endsWith(`_${b}`) || a.endsWith(`-${b}`) || b.endsWith(`_${a}`) || b.endsWith(`-${a}`);
+        };
+        
+        return packages.filter((p: any) => {
+            return myUnitIds.some(id => isMatch(p.unitId, id)) && p.status === 'aguardando';
+        });
+    }, [packages, myUnits]);
 
     const myNextReserva = useMemo(() => {
-        if (!profile?.unitId || !reservas || !areas) return null;
+        if (myUnits.length === 0 || !reservas || !areas) return null;
+        const myUnitIds = myUnits.map(u => String(u.id).toLowerCase());
         const now = new Date();
         now.setHours(0, 0, 0, 0);
-        const filteredReservas = reservas.filter((r: Reserva) =>
-            String(r.unitId).trim() === String(profile.unitId).trim() &&
-            r.status === 'confirmada' &&
-            new Date(r.data + 'T12:00:00') >= now
-        );
+        
+        const isMatch = (id1: string | null | undefined, id2: string | null | undefined) => {
+            if (!id1 || !id2) return false;
+            const a = String(id1).toLowerCase().trim();
+            const b = String(id2).toLowerCase().trim();
+            return a === b || a.endsWith(`_${b}`) || a.endsWith(`-${b}`) || b.endsWith(`_${a}`) || b.endsWith(`-${a}`);
+        };
+        
+        const filteredReservas = reservas.filter((r: Reserva) => {
+            return myUnitIds.some(id => isMatch(r.unitId, id)) &&
+                   r.status === 'confirmada' &&
+                   new Date(r.data + 'T12:00:00') >= now;
+        });
         const found = [...filteredReservas].sort((a: Reserva, b: Reserva) => new Date(a.data).getTime() - new Date(b.data).getTime())[0];
         if (!found) return null;
         const area = areas.find((a: Area) => a.id === found.areaId);
         return { ...found, areaName: area?.nome || 'Área Comum' };
-    }, [reservas, areas, profile?.unitId]);
+    }, [reservas, areas, myUnits]);
 
     const manutencoesComStatus = useMemo(() => {
         return manutencoes || [];
@@ -317,7 +364,11 @@ const DashboardPage = () => {
     const handleDownloadAction = async (targetRefMonth: string) => {
         const targetRecord = history.find(h => h.referenceMonth === targetRefMonth);
         if (!targetRecord) return;
-        const targetUnit = targetRecord.units.find(u => String(u.id).trim() === String(profile?.unitId).trim());
+        const myUnitIds = myUnits.map(mu => String(mu.id).toLowerCase().trim());
+        const targetUnit = targetRecord.units.find((u: Unit) => {
+            const uId = String(u.id).toLowerCase().trim();
+            return myUnitIds.some(id => uId === id || uId.endsWith(`_${id}`) || uId.endsWith(`-${id}`) || id.endsWith(`_${uId}`) || id.endsWith(`-${uId}`));
+        });
         if (!targetUnit) return;
         const activeBank = bankAccounts.find(b => b.status === 'ativa') || bankAccounts[0];
         await generateReceiptPDF({
@@ -543,19 +594,34 @@ const DashboardPage = () => {
     // Calculate all overdue months for the resident's unit
     // Calculate overdue vs open months for the resident's unit
     const invoiceStatus = useMemo(() => {
-        if (isAdmin || !profile?.unitId) return { overdue: [], open: [] };
+        if (isAdmin || myUnits.length === 0) return { overdue: [], open: [] };
 
         const overdue: string[] = [];
         const open: string[] = [];
         const now = new Date();
-        // Reset time part to ensure fair comparison for "today"
         now.setHours(0, 0, 0, 0);
+        
+        const myUnitIds = myUnits.map(u => String(u.id).toLowerCase());
+        
+        const isMatch = (id1: string | null | undefined, id2: string | null | undefined) => {
+            if (!id1 || !id2) return false;
+            const a = String(id1).toLowerCase().trim();
+            const b = String(id2).toLowerCase().trim();
+            return a === b || a.endsWith(`_${b}`) || a.endsWith(`-${b}`) || b.endsWith(`_${a}`) || b.endsWith(`-${a}`);
+        };
 
-        // Check history records - these are the billed months
         history.forEach((record: HistoryRecord) => {
-            const myHistoryUnit = record.units.find((u: Unit) => u.id === profile.unitId);
-            // Check if not paid
-            if (myHistoryUnit && !myHistoryUnit.paymentDate) {
+            const hasMyUnit = record.units.some((u: Unit) => {
+                return myUnitIds.some(id => isMatch(u.id, id));
+            });
+            
+            // Check if any of my units in this record are not paid
+            const hasUnpaid = record.units.some((u: Unit) => {
+                const isMine = myUnitIds.some(id => isMatch(u.id, id));
+                return isMine && !u.paymentDate;
+            });
+
+            if (hasMyUnit && hasUnpaid) {
                 let dueDateStr = record.dueDate;
                 if (!dueDateStr) {
                     dueDateStr = `${settings.dueDay.toString().padStart(2, '0')}/${record.referenceMonth}`;
@@ -563,7 +629,6 @@ const DashboardPage = () => {
 
                 try {
                     const [d, m, y] = dueDateStr.split('/').map(Number);
-                    // Let's set due date time to 23:59:59 so if it's today, it's not overdue yet
                     const due = new Date(y, m - 1, d, 23, 59, 59);
 
                     if (now > due) {
@@ -577,10 +642,8 @@ const DashboardPage = () => {
             }
         });
 
-        // Sort months? History is usually sorted by date desc, so we might want that or asc.
-        // Let's keep specific order if needed, but history iteration order matters.
         return { overdue, open };
-    }, [isAdmin, profile?.unitId, history, settings.dueDay]);
+    }, [isAdmin, myUnits, history, settings.dueDay]);
 
 
 
@@ -897,7 +960,8 @@ const DashboardPage = () => {
                         <div className="col-span-12 lg:col-span-8 flex flex-col gap-6 overflow-y-auto scrollbar-hide pr-1 min-w-0">
 
                             {/* 1. VISÃO DO RESIDENTE */}
-                            {!isAdmin && profile?.unitId && (
+                            {!isAdmin && !isAnyOperator && (
+                                myUnits.length > 0 ? (
                                 <div className="flex flex-col gap-8">
                                     {/* Card Pessoal do Residente */}
                                     <HabitaCard variant="indigo" padding="lg" className="relative group overflow-hidden">
@@ -1100,7 +1164,15 @@ const DashboardPage = () => {
                                                     </div>
                                                 ) : (
                                                     <>
-                                                        {history.filter(h => h.units.some(u => String(u.id).trim() === String(profile?.unitId).trim())).slice(0, 4).map((record: HistoryRecord) => (
+                                                        {history.filter(h => {
+                                                            const myUnitIds = myUnits.map(mu => String(mu.id).toLowerCase().trim());
+                                                            const isMatch = (id1: string | undefined, id2: string) => {
+                                                                if (!id1) return false;
+                                                                const a = String(id1).toLowerCase().trim();
+                                                                return a === id2 || a.endsWith(`_${id2}`) || a.endsWith(`-${id2}`) || id2.endsWith(`_${a}`) || id2.endsWith(`-${a}`);
+                                                            };
+                                                            return h.units.some((u: Unit) => myUnitIds.some(id => isMatch(u.id, id)));
+                                                        }).slice(0, 4).map((record: HistoryRecord) => (
                                                             <div key={record.id} className="bg-white p-3 rounded-md border border-slate-200 flex items-center justify-between group hover:border-indigo-200 transition-all shadow-sm">
                                                                 <div className="flex items-center gap-3">
                                                                     <div className="w-8 h-8 bg-slate-50 rounded-md flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-colors">
@@ -1178,6 +1250,19 @@ const DashboardPage = () => {
                                         </div>
                                     </HabitaChartContainer>
                                 </div>
+                            ) : (
+                                <HabitaCard variant="indigo" padding="lg" className="flex flex-col items-center text-center gap-4">
+                                    <div className="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center">
+                                        <Building2 className="text-indigo-200" size={32} />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-lg font-black text-white mb-1">Bem-vindo ao HabitarPleno!</h2>
+                                        <p className="text-indigo-100 text-sm font-medium opacity-90">
+                                            Sua conta ainda não está vinculada a uma unidade. Entre em contato com a administração do condomínio para concluir seu cadastro.
+                                        </p>
+                                    </div>
+                                </HabitaCard>
+                            )
                             )}
 
                             {(isAdmin || isAnyOperator) && (

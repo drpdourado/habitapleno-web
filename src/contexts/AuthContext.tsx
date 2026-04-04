@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import api from '../services/api';
+import { auth } from '../firebase';
+import { sendPasswordResetEmail } from 'firebase/auth';
 
 interface User {
   uid: string;
@@ -150,7 +152,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const resetPassword = async (email: string) => {
-    await api.post('/auth/reset-password', { email });
+    await sendPasswordResetEmail(auth, email);
   };
 
   const isAdmin = useMemo(() => {

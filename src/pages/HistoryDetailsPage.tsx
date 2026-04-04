@@ -59,8 +59,20 @@ const HistoryDetailsPage = () => {
         const found = history.find(h => h.id === id);
         if (found) {
             const cloned = JSON.parse(JSON.stringify(found)) as HistoryRecord;
-            if (cloned.units && !hasPermission(accessProfile, 'history', 'all')) {
-                cloned.units = cloned.units.filter(u => u.id === profile?.unitId);
+            if (cloned.units && !hasPermission(profile, 'history', 'all')) {
+                const linkedUnitIds = profile?.vinculos?.map((v: any) => v.unitId) || [];
+                
+                const isMatch = (id1: string | null | undefined, id2: string | null | undefined) => {
+                    if (!id1 || !id2) return false;
+                    const a = String(id1).toLowerCase().trim();
+                    const b = String(id2).toLowerCase().trim();
+                    return a === b || a.endsWith(`_${b}`) || a.endsWith(`-${b}`) || b.endsWith(`_${a}`) || b.endsWith(`-${a}`);
+                };
+
+                cloned.units = cloned.units.filter(u => {
+                    if (isMatch(u.id, profile?.unitId)) return true;
+                    return linkedUnitIds.some((li: string) => isMatch(u.id, li));
+                });
             }
             return cloned;
         }

@@ -25,7 +25,7 @@ function cn(...inputs: ClassValue[]) {
 
 export function ReadingsManagerPage() {
     const { visibleUnits: units, visibleHistory: history, settings, saveHistoryRecord, deleteHistoryRecord, isMonthClosed, periodStatus, gasTrends } = useApp();
-    const { accessProfile, isAdmin } = useAuth();
+    const { profile, accessProfile, isAdmin } = useAuth();
     const canManageGas = hasPermission(accessProfile, 'gas', 'all');
     const canViewGas = hasPermission(accessProfile, 'gas', 'own') || canManageGas;
 
@@ -344,7 +344,19 @@ export function ReadingsManagerPage() {
                     <HabitaTable
                         responsive
                         headers={['Unidade', 'Status', 'Anterior', 'Leitura Final', 'Consumo (m³)', 'Valor']}
-                        data={units.sort((a, b) => {
+                        data={units.filter(u => {
+                            if (canManageGas) return true;
+                            
+                            const linkedUnitIds = profile?.vinculos?.map((v: any) => v.unitId) || [];
+                            const isMatch = (id1: string | null | undefined, id2: string | null | undefined) => {
+                                if (!id1 || !id2) return false;
+                                const a = String(id1).toLowerCase().trim();
+                                const b = String(id2).toLowerCase().trim();
+                                return a === b || a.endsWith(`_${b}`) || a.endsWith(`-${b}`) || b.endsWith(`_${a}`) || b.endsWith(`-${a}`);
+                            };
+                            if (isMatch(u.id, profile?.unitId)) return true;
+                            return linkedUnitIds.some((li: string) => isMatch(u.id, li));
+                        }).sort((a, b) => {
                             if ((a.block || '') !== (b.block || '')) return (a.block || '').localeCompare(b.block || '');
                             return a.id.localeCompare(b.id, undefined, { numeric: true });
                         }).map(unit => {
@@ -356,13 +368,15 @@ export function ReadingsManagerPage() {
                             const isHigh = avg !== null && consumption > (avg * 1.4) && consumption > 1;
                             const gasPrice = activeRecord?.gasPrice || settings.gasPrice || 0;
 
+                            const displayId = unit.id.split(/[-_]/).pop() || unit.id;
+
                             return [
                                 <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 bg-slate-50 border border-slate-200 rounded flex items-center justify-center font-bold text-slate-800 text-xs">
-                                        {unit.id.split('-')[0]}
+                                    <div className="w-8 h-8 bg-slate-50 border border-slate-200 rounded flex items-center justify-center font-bold text-slate-800 text-xs px-1">
+                                        {displayId}
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="font-bold text-slate-900 line-clamp-1">{unit.ownerName}</span>
+                                        <span className="font-bold text-slate-900 line-clamp-1">{unit.ownerName || 'Sem Nome'}</span>
                                         <span className="text-[10px] text-slate-500 font-medium uppercase tracking-tight">
                                             {settings.unitTypes.find((t: any) => t.id === unit.typeId)?.name || 'Unidade'}
                                         </span>

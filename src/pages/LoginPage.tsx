@@ -173,12 +173,12 @@ const LoginPage: React.FC<LoginPageProps> = ({
 
                     {/* Unified Header (Logo + Welcome) - No card/box wrapper */}
                     <div className="flex flex-col items-center text-center space-y-6">
-                        <img 
-                            src="/LogoSistema.png" 
-                            alt="Logo" 
-                            className="h-16 lg:h-24 w-auto object-contain mb-2 drop-shadow-sm" 
+                        <img
+                            src="/LogoSistema.png"
+                            alt="Logo"
+                            className="h-16 lg:h-24 w-auto object-contain mb-2 drop-shadow-sm"
                         />
-                        
+
                         <div className="space-y-2">
                             <div className="flex justify-center mb-4">
                                 <HabitaBadge variant="indigo" size="xs">ACESSO SEGURO</HabitaBadge>
@@ -202,7 +202,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
                                     label="Seu E-mail"
                                     type="email"
                                     required
-                                    placeholder="exemplo@habita.com"
+                                    placeholder="exemplo@habitarpleno.com"
                                     value={email}
                                     onChange={(e: any) => setEmail(e.target.value)}
                                     className="h-14 px-4 bg-slate-50 border-slate-100 focus:bg-white text-base font-bold transition-all transition-transform active:scale-[0.99]"

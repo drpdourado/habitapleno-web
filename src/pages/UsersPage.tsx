@@ -48,7 +48,7 @@ export interface AccessProfile {
 }
 
 const UsersPage = () => {
-    const { user, accessProfile } = useAuth();
+    const { user, accessProfile, resetPassword } = useAuth();
     const { showToast } = useToast();
     const { units } = useApp();
 
@@ -210,7 +210,7 @@ const UsersPage = () => {
 
     const handleResetPassword = async (email: string) => {
         try {
-            await api.post('/users/reset-password', { email });
+            await resetPassword(email);
             showToast("E-mail de redefinição enviado!", 'success');
         } catch (error: any) {
             showToast("Erro ao enviar e-mail: " + (error.response?.data?.error || error.message), 'error');
@@ -331,7 +331,9 @@ const UsersPage = () => {
                                                             {u.unitId && (
                                                                 <div className="flex flex-col">
                                                                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Unidade</span>
-                                                                    <span className="text-[11px] font-black text-slate-700">UN {u.unitId}</span>
+                                                                    <span className="text-[11px] font-black text-slate-700">
+                                                                        UN {u.unitId?.split(/[-_]/).pop()}
+                                                                    </span>
                                                                 </div>
                                                             )}
                                                             <code className="text-[9px] text-slate-400 font-mono bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
@@ -369,9 +371,16 @@ const UsersPage = () => {
                                                 </HabitaBadge>
                                             </HabitaTD>
                                             <HabitaTD align="center" className="hidden md:table-cell">
-                                                {u.unitId ? (
-                                                    <div className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-lg text-[10px] font-black border border-indigo-100/50 inline-block">
-                                                        UN {u.unitId}
+                                                {u.unitId || (u.vinculos && u.vinculos.length > 0) ? (
+                                                    <div className="flex flex-col items-center gap-1">
+                                                        <div className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-lg text-[10px] font-black border border-indigo-100/50 inline-block">
+                                                            UN {(u.unitId || u.vinculos?.[0]?.unitId)?.split(/[-_]/).pop()}
+                                                        </div>
+                                                        {u.vinculos && u.vinculos.length > 1 && (
+                                                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">
+                                                                + {u.vinculos.length - 1} Vínculos
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 ) : <span className="text-slate-300 font-black">—</span>}
                                             </HabitaTD>
@@ -510,7 +519,13 @@ const UsersPage = () => {
                                 label="Unidade (Opcional)"
                                 value={formData.unitId}
                                 onChange={(val) => setFormData(p => ({ ...p, unitId: val }))}
-                                options={units.map(u => ({ value: u.id, label: `Unidade ${u.id}` }))}
+                                options={units.map(u => {
+                                    const displayLabel = u.number || u.id.split(/[-_]/).pop() || u.id;
+                                    return { 
+                                        value: u.id, 
+                                        label: `Unidade ${displayLabel}${u.block ? ` (Bl ${u.block})` : ''}` 
+                                    };
+                                })}
                                 placeholder="Vincular unidade..."
                                 className="bg-slate-50/50 border-slate-200"
                             />
@@ -589,7 +604,13 @@ const UsersPage = () => {
                             label="Vínculo com Unidade"
                             value={editFormData.unitId}
                             onChange={val => setEditFormData(p => ({ ...p, unitId: val }))}
-                            options={units.map(u => ({ value: u.id, label: `Unidade ${u.id}` }))}
+                            options={units.map(u => {
+                                const displayLabel = u.number || u.id.split(/[-_]/).pop() || u.id;
+                                return { 
+                                    value: u.id, 
+                                    label: `Unidade ${displayLabel}${u.block ? ` (Bl ${u.block})` : ''}` 
+                                };
+                            })}
                             placeholder="Nenhuma unidade selecionada"
                             className="bg-slate-50/50 border-slate-200"
                         />

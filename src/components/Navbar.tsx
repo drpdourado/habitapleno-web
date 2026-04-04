@@ -60,7 +60,7 @@ const Navbar = () => {
   // Definir todos os itens do menu com suas categorias
   const allItems = [
     // ADMINISTRAÇÃO
-    { to: "/", icon: <LayoutDashboard />, label: "Início", module: 'dashboard', category: 'admin', end: true, mobileOnly: true },
+    { to: "/", icon: <LayoutDashboard />, label: "Início", module: 'dashboard', category: 'admin', end: true },
     { to: "/history", icon: <FileText />, label: "Apuração", module: 'history', category: 'admin' },
     { to: "/financial", icon: <DollarSign />, label: "Financeiro", module: 'financial', category: 'admin', end: true },
     { to: "/financial/encerramento", icon: <Shield />, label: "Encerramento", module: 'closures', category: 'admin' },
@@ -107,8 +107,14 @@ const Navbar = () => {
     // SuperAdmin always sees everything
     if (isSuperAdmin) return true;
 
+    // Admin (síndico/gestor) sees everything except superadmin-only items
+    if (isAdmin) {
+      if (item.module === 'superadmin') return false;
+      return true;
+    }
+
     // Use a standard utility for all other profile-based permissions
-    const canSeeModule = hasPermission(user, item.module);
+    const canSeeModule = hasPermission(user, item.module, 'own') || hasPermission(accessProfile, item.module, 'own');
     
     // Explicitly hide SuperAdmin module if not authorized
     if (item.module === 'superadmin' && !canSeeModule) return false;
@@ -139,7 +145,7 @@ const Navbar = () => {
   const adminItems = filteredItems.filter(item => item.category === 'admin');
   if (adminItems.length > 0) {
     navGroups.push({
-      title: 'Administração',
+      title: (isAdmin || isSuperAdmin || adminItems.some(i => i.module !== 'dashboard')) ? 'Administração' : 'Início',
       items: adminItems.map(i => ({
         label: i.label,
         icon: i.icon,

@@ -152,6 +152,9 @@ export const HabitaNavigation: React.FC<HabitaNavigationProps> = ({
   };
 
   const NavGroup = ({ group, isDark, isOpen, onToggle }: { group: HabitaNavigationGroup; isDark: boolean; isOpen: boolean; onToggle: () => void }) => {
+    const visibleItems = group.items.filter(item => !item.mobileOnly);
+    if (visibleItems.length === 0) return null;
+
     return (
       <div className="space-y-1">
         {group.title && (
@@ -176,7 +179,7 @@ export const HabitaNavigation: React.FC<HabitaNavigationProps> = ({
           "space-y-1 overflow-hidden transition-all duration-300",
           isOpen ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
         )}>
-          {group.items.filter(item => !item.mobileOnly).map((item, i) => (
+          {visibleItems.map((item, i) => (
             <NavItem key={i} item={item} />
           ))}
         </div>
@@ -353,23 +356,26 @@ export const HabitaNavigation: React.FC<HabitaNavigationProps> = ({
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 pb-12 space-y-6 custom-scrollbar">
-              {groups.map((group, idx) => (
-                <div key={idx} className="space-y-2">
-                  {group.title && (
-                    <h3 className={cn(
-                      "px-3 text-[10px] font-bold uppercase tracking-wider",
-                      isDark ? "text-slate-500" : "text-slate-400"
-                    )}>
-                      {group.title}
-                    </h3>
-                  )}
-                  <div className="space-y-1">
-                    {group.items.map((item, i) => (
-                      <NavItem key={i} item={item} isMobile />
-                    ))}
+              {groups.map((group, idx) => {
+                if (group.items.length === 0) return null;
+                return (
+                  <div key={idx} className="space-y-2">
+                    {group.title && (
+                      <h3 className={cn(
+                        "px-3 text-[10px] font-bold uppercase tracking-wider",
+                        isDark ? "text-slate-500" : "text-slate-400"
+                      )}>
+                        {group.title}
+                      </h3>
+                    )}
+                    <div className="space-y-1">
+                      {group.items.map((item, i) => (
+                        <NavItem key={i} item={item} isMobile />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               
               {children && <div className="mt-8">{children}</div>}
               

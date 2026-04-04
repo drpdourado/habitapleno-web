@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { ReadingsManagerPage } from './ReadingsManagerPage';
 import { clsx } from 'clsx';
+import { hasPermission } from '../utils/rbac';
 
 // Habita Design System
 import { HabitaContainer, HabitaContainerHeader, HabitaContainerContent } from '../components/ui/HabitaContainer';
@@ -16,8 +17,8 @@ import { HabitaBadge } from '../components/ui/HabitaBadge';
 import { HabitaInput } from '../components/ui/HabitaForm';
 
 const MobileReading = () => {
-    const { visibleUnits: units, settings, visibleHistory: history, saveCurrentReading } = useApp();
-    const { isOperator, isAdmin } = useAuth();
+    const { visibleUnits: units, settings, visibleHistory: historyData, saveCurrentReading } = useApp();
+    const { profile, isOperator, isAdmin } = useAuth();
     const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -30,20 +31,42 @@ const MobileReading = () => {
 
     const activeRef = settings.currentRefMonth;
 
-    // A month is "closed" if it exists in history
+    // A month is "closed" if it exists in historyData
     const isClosed = useMemo(() =>
-        history.some(h => h.referenceMonth === activeRef),
-        [history, activeRef]);
+        historyData.some((h: any) => h.referenceMonth === activeRef),
+        [historyData, activeRef]);
 
     const filteredUnits = useMemo(() => {
-        if (!searchTerm) return units;
+        // Filter by permissions first
+        let baseUnits = units;
+        
+        // Use permissions instead of hardcoded roles
+        const canSeeAll = hasPermission(profile, 'gas', 'all') || hasPermission(profile, 'history', 'all');
+        
+        if (!canSeeAll) {
+            const linkedUnitIds = profile?.vinculos?.map((v: any) => v.unitId) || [];
+            
+            const isMatch = (id1: string | null | undefined, id2: string | null | undefined) => {
+                if (!id1 || !id2) return false;
+                const a = String(id1).toLowerCase().trim();
+                const b = String(id2).toLowerCase().trim();
+                return a === b || a.endsWith(`_${b}`) || a.endsWith(`-${b}`) || b.endsWith(`_${a}`) || b.endsWith(`-${a}`);
+            };
+
+            baseUnits = units.filter(u => {
+                if (isMatch(u.id, profile?.unitId)) return true;
+                return linkedUnitIds.some((li: string) => isMatch(u.id, li));
+            });
+        }
+
+        if (!searchTerm) return baseUnits;
         const lowSearch = searchTerm.toLowerCase();
-        return units.filter(u => 
+        return baseUnits.filter(u => 
             u.id.toString().includes(lowSearch) || 
             (u.ownerName || '').toLowerCase().includes(lowSearch) ||
             (u.block || '').toLowerCase().includes(lowSearch)
         );
-    }, [units, searchTerm]);
+    }, [units, searchTerm, isAdmin, isOperator, profile]);
 
     // REDIRECT / SWITCH VIEW
     // Desktop users see the Full Manager (Table)
@@ -134,9 +157,9 @@ const MobileReading = () => {
                                     let prevY = y;
                                     if (prevM < 1) { prevM = 12; prevY--; }
                                     const prevRef = `${prevM.toString().padStart(2, '0')}/${prevY}`;
-                                    const prevRecord = history.find(h => h.referenceMonth === prevRef);
+                                    const prevRecord = historyData.find((h: any) => h.referenceMonth === prevRef);
                                     if (prevRecord && prevRecord.units) {
-                                        const u = prevRecord.units.find(idx => idx.id === unit.id);
+                                        const u = prevRecord.units.find((idx: any) => idx.id === unit.id);
                                         return u ? u.currentGasReading : 0;
                                     }
                                 } catch (e) { }
@@ -149,7 +172,7 @@ const MobileReading = () => {
                                 <UnitReadingCard
                                     key={unit.id}
                                     unit={unit}
-                                    history={history}
+                                    history={historyData}
                                     onSave={saveCurrentReading}
                                     canEdit={isAdmin || isOperator}
                                     settings={settings}
@@ -189,8 +212,8 @@ const UnitReadingCard = ({ unit, history, onSave, canEdit, settings, previousRea
     // Calculate last 3 months average consumption
     const averageConsumption = useMemo(() => {
         const unitHistory = history
-            .map(h => (h.units || []).find((u: any) => u.id === unit.id))
-            .filter((u): u is any => !!u)
+            .map((h: any) => (h.units || []).find((u: any) => u.id === unit.id))
+            .filter((u: any): u is any => !!u)
             .slice(0, 3);
 
         if (unitHistory.length === 0) return null;

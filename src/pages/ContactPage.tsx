@@ -62,20 +62,16 @@ export function ContactPage() {
         category: CATEGORIAS[0]
     });
 
-    useEffect(() => {
+    const fetchTickets = () => {
         if (!tenantId) return;
-
         setLoading(true);
-        const unsubscribe = condoService.listenTickets(
+        condoService.listenTickets(
             (data) => {
-                // Se não tem permissão 'all' (Módulo Total), vê apenas os seus
                 if (canSeeAllTickets) {
                     setTickets(data);
                 } else {
                     setTickets(data.filter(t => t.authorId === user?.uid));
                 }
-                
-                // Update selected ticket implicitly via functional update to avoid closure trap
                 setSelectedTicket(prev => {
                     if (prev) {
                         const updated = data.find(t => t.id === prev.id);
@@ -83,20 +79,21 @@ export function ContactPage() {
                     }
                     return prev;
                 });
-
                 setLoading(false);
             },
             (err) => {
                 console.error(err);
-                if (err.message.includes('permission-denied')) {
-                     // ignore if rules not applied yet
+                if (err.message?.includes('permission-denied')) {
                      setTickets([]);
                 }
                 setLoading(false);
             }
         );
+    };
 
-        return () => unsubscribe();
+    useEffect(() => {
+        fetchTickets();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tenantId, canSeeAllTickets, profile?.unitId, user?.uid]);
 
     useEffect(() => {
@@ -138,10 +135,16 @@ export function ContactPage() {
         }
 
         try {
+            const resolvedUnitIds = profile?.unitId 
+                ? String(profile.unitId) 
+                : (profile?.vinculos && profile.vinculos.length > 0 
+                    ? profile.vinculos.map((v: any) => v.unitId).filter(Boolean).join(', ') 
+                    : 'N/A');
+
             const res = await condoService.createTicket({
                 subject: formData.subject,
                 category: formData.category,
-                unitId: String(profile?.unitId || 'N/A'),
+                unitId: resolvedUnitIds,
                 authorId: String(user?.uid),
                 authorName: String(profile?.name || user?.email?.split('@')[0] || 'Desconhecido'),
                 condominiumId: String(tenantId)
@@ -163,6 +166,7 @@ export function ContactPage() {
                 showToast('Chamado aberto com sucesso!', 'success');
                 setIsModalOpen(false);
                 setReplyText('');
+                fetchTickets();
             }
         } catch (error) {
             showToast('Erro ao abrir chamado.', 'error');
@@ -186,6 +190,7 @@ export function ContactPage() {
             );
             setReplyText('');
             showToast('Mensagem enviada', 'success');
+            fetchTickets();
         } catch (error) {
             showToast('Erro ao enviar mensagem', 'error');
         }
@@ -196,6 +201,7 @@ export function ContactPage() {
         try {
             await condoService.updateTicketStatus(selectedTicket.id, selectedTicket, newStatus);
             showToast(`Status atualizado para ${newStatus}`, 'success');
+            fetchTickets();
         } catch (error) {
             showToast('Erro ao atualizar status', 'error');
         }
