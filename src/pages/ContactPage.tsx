@@ -36,7 +36,7 @@ const CATEGORIAS = [
 ];
 
 export function ContactPage() {
-    const { profile, user, accessProfile } = useAuth();
+    const { profile, user, accessProfile, isAdmin } = useAuth();
     const { tenantId } = useApp();
     const { showToast } = useToast();
     
@@ -230,7 +230,7 @@ export function ContactPage() {
                     subtitle="Gestão de chamados e solicitações corporativas"
                     icon={<MessageSquare size={24} />}
                     actions={
-                        !canSeeAllTickets && (
+                        !isAdmin && (
                             <HabitaButton
                                 onClick={openModal}
                                 variant="primary"
@@ -290,7 +290,21 @@ export function ContactPage() {
                                     <div className="w-16 h-16 bg-slate-100 text-slate-300 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-slate-200 border-dashed">
                                         <Inbox size={24} />
                                     </div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nenhuma conversa iniciada</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Nenhuma conversa iniciada</p>
+                                    
+                                    {!isAdmin && (
+                                        <div className="max-w-[180px] mx-auto">
+                                            <HabitaButton
+                                                onClick={openModal}
+                                                variant="outline"
+                                                size="sm"
+                                                icon={<Plus size={14} />}
+                                                className="w-full text-[9px] font-black uppercase tracking-widest"
+                                            >
+                                                Iniciar Chamado
+                                            </HabitaButton>
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 filteredTickets.map((ticket) => (

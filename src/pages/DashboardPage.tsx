@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import api from '../services/api';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlertCircle, Calendar, Sparkles, Plus, ArrowRightLeft, CheckCircle2, Check, Download, Building2, ArrowRight, LogOut, DollarSign, Info, AlertTriangle, Megaphone, Zap, Shield, Wrench, FileText, ChevronRight } from 'lucide-react';
+import { AlertCircle, Calendar, Sparkles, Plus, ArrowRightLeft, CheckCircle2, Check, Download, Building2, ArrowRight, LogOut, DollarSign, Info, AlertTriangle, Megaphone, Zap, Shield, Wrench, FileText, ChevronRight, MessageSquare } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -230,7 +230,7 @@ const DashboardPage = () => {
     const canSeePortaria = isAdmin || hasPermission(accessProfile, 'access', 'own');
     const canSeeReservas = isAdmin || hasPermission(accessProfile, 'areas', 'own');
     const canManageReservas = isAdmin || hasPermission(accessProfile, 'areas', 'all');
-
+    const canSeeContact = isAdmin || hasPermission(accessProfile, 'contact', 'own') || !isAdmin; 
     const visibleNotices = useMemo(() => notices.filter(n => n.status === 'approved' && !n.isArchived), [notices]);
 
 
@@ -844,6 +844,15 @@ const DashboardPage = () => {
                                 label="Financeiro"
                                 iconClassName="text-emerald-600"
                                 onClick={() => navigate('/financial')}
+                                className="flex-1 min-w-[140px]"
+                            />
+                        )}
+                        {canSeeContact && (
+                            <HabitaShortcut
+                                icon={<MessageSquare />}
+                                label="Fale com Síndico"
+                                iconClassName="text-indigo-600"
+                                onClick={() => navigate('/fale-conosco')}
                                 className="flex-1 min-w-[140px]"
                             />
                         )}

@@ -122,6 +122,9 @@ const Navbar = () => {
     // Special: Dashboard and Profile are always visible if logged in
     if (item.module === 'dashboard' || item.module === 'profile') return true;
 
+    // Force Contact visibility for residents
+    if (item.module === 'contact') return true;
+
     return canSeeModule;
   }).map(item => {
     // Plan-based filtering: mark items blocked by the plan

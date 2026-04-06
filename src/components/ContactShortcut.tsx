@@ -26,9 +26,15 @@ export const ContactShortcut = () => {
                     // Morador: Alerta se houver tickets 'Respondido'
                     const myTickets = data.filter(t => t.authorId === user.uid);
                     const hasAnswered = myTickets.some(t => {
-                        if (t.status === 'Respondido') return true;
+                        // Notificar se o status mudou para algo que requer atenção (Respondido/Fechado)
+                        // OU se a última mensagem não foi enviada pelo morador
+                        if (t.status === 'Respondido' || t.status === 'Fechado') {
+                            if (t.messages && t.messages.length > 0) {
+                                return t.messages[t.messages.length - 1].authorId !== user.uid;
+                            }
+                            return true;
+                        }
                         if (t.status === 'Aberto' && t.messages && t.messages.length > 0) {
-                            // Se está Aberto mas a última mensagem não é do próprio usuário (ex: Síndico reabriu)
                             return t.messages[t.messages.length - 1].authorId !== user.uid;
                         }
                         return false;
