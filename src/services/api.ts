@@ -21,6 +21,18 @@ api.interceptors.request.use((config) => {
     config.headers['x-condo-id'] = condoId;
   }
 
+  try {
+    const userStr = localStorage.getItem('@HabitarPleno:user');
+    if (userStr) {
+      const userObj = JSON.parse(userStr);
+      if (userObj?.uid) {
+        config.headers['x-user-id'] = userObj.uid;
+      }
+    }
+  } catch (e) {
+    console.error('Error attaching x-user-id:', e);
+  }
+
   return config;
 });
 

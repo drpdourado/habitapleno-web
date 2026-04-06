@@ -22,6 +22,7 @@ const MobileReading = () => {
     const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
     const [searchTerm, setSearchTerm] = useState('');
 
+
     // Responsive Listeners
     useEffect(() => {
         const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
@@ -61,11 +62,12 @@ const MobileReading = () => {
 
         if (!searchTerm) return baseUnits;
         const lowSearch = searchTerm.toLowerCase();
-        return baseUnits.filter(u => 
+        const final = baseUnits.filter(u => 
             u.id.toString().includes(lowSearch) || 
             (u.ownerName || '').toLowerCase().includes(lowSearch) ||
             (u.block || '').toLowerCase().includes(lowSearch)
         );
+        return final;
     }, [units, searchTerm, isAdmin, isOperator, profile]);
 
     // REDIRECT / SWITCH VIEW
@@ -131,7 +133,7 @@ const MobileReading = () => {
                                     <div className="h-2 w-24 bg-slate-100 rounded-full overflow-hidden">
                                         <div 
                                             className="h-full bg-indigo-600 transition-all duration-700"
-                                            style={{ width: `${(units.filter(u => u.currentGasReading > (u.lastGasReading || 0)).length / units.length) * 100}%` }}
+                                            style={{ width: `${(units.filter(u => u.currentGasReading > (u.lastGasReading || 0)).length / (units.length || 1)) * 100}%` }}
                                         />
                                     </div>
                                     <span className="text-[10px] font-black text-slate-700 uppercase">
@@ -147,7 +149,7 @@ const MobileReading = () => {
 
                     {/* Units List */}
                     <div className="space-y-6">
-                        {filteredUnits.map((unit) => {
+                        {filteredUnits.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true })).map((unit) => {
                             // Logic to find the correct previous reading
                             const getPreviousReading = () => {
                                 if (!activeRef) return 0;
@@ -159,7 +161,7 @@ const MobileReading = () => {
                                     const prevRef = `${prevM.toString().padStart(2, '0')}/${prevY}`;
                                     const prevRecord = historyData.find((h: any) => h.referenceMonth === prevRef);
                                     if (prevRecord && prevRecord.units) {
-                                        const u = prevRecord.units.find((idx: any) => idx.id === unit.id);
+                                        const u = prevRecord.units.find((idx: any) => isMatch(idx.id, unit.id));
                                         return u ? u.currentGasReading : 0;
                                     }
                                 } catch (e) { }
@@ -203,6 +205,13 @@ interface UnitReadingCardProps {
     previousReading: number;
 }
 
+const isMatch = (id1: string | null | undefined, id2: string | null | undefined) => {
+    if (!id1 || !id2) return false;
+    const a = String(id1).toLowerCase().trim();
+    const b = String(id2).toLowerCase().trim();
+    return a === b || a.endsWith(`_${b}`) || a.endsWith(`-${b}`) || b.endsWith(`_${a}`) || b.endsWith(`-${a}`);
+};
+
 const UnitReadingCard = ({ unit, history, onSave, canEdit, settings, previousReading }: UnitReadingCardProps) => {
     const isActuallyNew = unit.currentGasReading > (previousReading || 0);
     const [inputValue, setInputValue] = useState<string>(isActuallyNew ? unit.currentGasReading?.toString() : '');
@@ -212,7 +221,7 @@ const UnitReadingCard = ({ unit, history, onSave, canEdit, settings, previousRea
     // Calculate last 3 months average consumption
     const averageConsumption = useMemo(() => {
         const unitHistory = history
-            .map((h: any) => (h.units || []).find((u: any) => u.id === unit.id))
+            .map((h: any) => (h.units || []).find((u: any) => isMatch(u.id, unit.id)))
             .filter((u: any): u is any => !!u)
             .slice(0, 3);
 

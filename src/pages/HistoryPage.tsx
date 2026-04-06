@@ -18,7 +18,7 @@ import { formatCurrency } from '../utils/FinanceUtils';
 
 const HistoryPage = () => {
     const { visibleHistory: history, deleteHistoryRecord, isMonthClosed } = useApp();
-    const { profile, accessProfile } = useAuth();
+    const { profile, isAdmin } = useAuth();
     const navigate = useNavigate();
     const [filterRef, setFilterRef] = useState<string>('');
 
@@ -101,7 +101,7 @@ const HistoryPage = () => {
                                 <HabitaTH>Data da Apuração</HabitaTH>
                                 <HabitaTH>Unidades</HabitaTH>
                                 <HabitaTH align="right">
-                                    {hasPermission(accessProfile, 'history', 'all') ? 'Total Arrecadado' : 'Meu Total'}
+                                    {(isAdmin || hasPermission(profile, 'history', 'all')) ? 'Total Arrecadado' : 'Meu Total'}
                                 </HabitaTH>
                                 <HabitaTH align="center">Status</HabitaTH>
                                 <HabitaTH align="right">Ações</HabitaTH>
@@ -109,7 +109,7 @@ const HistoryPage = () => {
                         </HabitaTHead>
                         <HabitaTBody>
                             {filteredHistory.map((record) => {
-                                const canSeeAll = hasPermission(profile, 'history', 'all');
+                                const canSeeAll = isAdmin || hasPermission(profile, 'history', 'all');
                                 const units = record.units || [];
                                 const linkedUnitIds = profile?.vinculos?.map((v: any) => v.unitId) || [];
                                 

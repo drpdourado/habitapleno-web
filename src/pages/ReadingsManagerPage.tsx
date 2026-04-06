@@ -23,6 +23,13 @@ function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
 
+const isMatch = (id1: string | null | undefined, id2: string | null | undefined) => {
+    if (!id1 || !id2) return false;
+    const a = String(id1).toLowerCase().trim();
+    const b = String(id2).toLowerCase().trim();
+    return a === b || a.endsWith(`_${b}`) || a.endsWith(`-${b}`) || b.endsWith(`_${a}`) || b.endsWith(`-${a}`);
+};
+
 export function ReadingsManagerPage() {
     const { visibleUnits: units, visibleHistory: history, settings, saveHistoryRecord, deleteHistoryRecord, isMonthClosed, periodStatus, gasTrends } = useApp();
     const { profile, accessProfile, isAdmin } = useAuth();
@@ -99,10 +106,8 @@ export function ReadingsManagerPage() {
     }, [readings, units, history, selectedMonth, existingRecordId]);
 
     function getPreviousReading(unitId: string, currentMonthRecord?: any): number {
-        // Se já houver histórico carregado para o mês atual, essa função não é chamada na renderização básica,
-        // mas é útil para novos períodos. Usamos o registro do servidor.
         if (currentMonthRecord) {
-            const u = currentMonthRecord.units?.find((idx: any) => idx.id === unitId);
+            const u = currentMonthRecord.units?.find((idx: any) => isMatch(idx.id, unitId));
             if (u && (u.lastGasReading || 0) > 0) return u.lastGasReading;
         }
         return gasTrends.lastReadings[unitId] || 0;
@@ -123,7 +128,13 @@ export function ReadingsManagerPage() {
             setIsUnlocked(false);
             setStatusMessage(periodStatus[selectedMonth] || 'REGISTRO SALVO');
             const loadedData: { [key: string]: number } = {};
-            record.units?.forEach(u => loadedData[u.id] = u.currentGasReading);
+            // Corrigindo para usar o ID da unidade do cadastro principal
+            units.forEach(baseUnit => {
+                const historyUnit = record.units?.find(u => isMatch(u.id, baseUnit.id));
+                if (historyUnit) {
+                    loadedData[baseUnit.id] = historyUnit.currentGasReading;
+                }
+            });
             setReadings(loadedData);
         } else {
             setIsExistingRecord(false);
@@ -163,7 +174,7 @@ export function ReadingsManagerPage() {
         const historyRecord = history.find(h => h.id === existingRecordId);
         const snapshotUnits = units.map(baseUnit => {
             const currentGasReading = readings[baseUnit.id] || 0;
-            const historyUnit = historyRecord?.units?.find(u => u.id === baseUnit.id);
+            const historyUnit = historyRecord?.units?.find(u => isMatch(u.id, baseUnit.id));
             const lastGasReading = (isExistingRecord && historyUnit && (historyUnit.lastGasReading || 0) > 0)
                 ? historyUnit.lastGasReading
                 : getPreviousReading(baseUnit.id);

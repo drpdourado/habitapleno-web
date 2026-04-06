@@ -135,11 +135,13 @@ export function ContactPage() {
         }
 
         try {
+            const mapUnits = profile?.vinculos && profile.vinculos.length > 0 
+                ? profile.vinculos.map((v: any) => v.unitId).filter(Boolean).join(', ')
+                : '';
+                
             const resolvedUnitIds = profile?.unitId 
                 ? String(profile.unitId) 
-                : (profile?.vinculos && profile.vinculos.length > 0 
-                    ? profile.vinculos.map((v: any) => v.unitId).filter(Boolean).join(', ') 
-                    : 'N/A');
+                : (mapUnits ? mapUnits : 'N/A');
 
             const res = await condoService.createTicket({
                 subject: formData.subject,

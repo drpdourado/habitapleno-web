@@ -229,9 +229,73 @@ const Navbar = () => {
   const userFormatted = {
     name: profile?.name || user?.email?.split('@')[0] || 'Usuário',
     role: (() => {
-      if (isAdmin || isSuperAdmin) return 'SÍNDICO / ADMIN';
-      if (hasPermission(accessProfile, 'gas', 'all') || hasPermission(accessProfile, 'units', 'all')) return 'ZELADOR';
-      return `UNIDADE ${profile?.unitId || (user?.email?.split('@')[0])} `;
+      // 1. Prioriza a role do contexto do condomínio ATUAL (accessProfile)
+      // Se não houver, cai para as verificações globais (isAdmin / isSuperAdmin)
+      const currentRole = accessProfile?.role || profile?.role || user?.role;
+      if (currentRole === 'superadmin' || currentRole === 'admin' || currentRole === 'sindico' || isAdmin || isSuperAdmin) {
+           return 'SÍNDICO / ADMIN';
+      }
+      
+      if (['operator', 'concierge', 'zelador'].includes(currentRole) || hasPermission(accessProfile, 'gas', 'all')) {
+           return 'OPERADOR / ZELADOR';
+      }
+      
+      // Lógica de Morador
+      const vUnits = user?.vinculos 
+        ? user.vinculos.filter((v: any) => v.condominiumId === tenantId && v.unitId).map((v: any) => v.unitId)
+        : [];
+        
+      let displayedUnit = profile?.unitId;
+      if (!displayedUnit && vUnits.length > 0) {
+          displayedUnit = vUnits.join(', ');
+      }
+      
+      if (!displayedUnit) {
+          return 'MORADOR';
+      }
+
+      // Limpeza se o banco de dados trouxe o formato antigo "Condominio - Unidade"
+      if (typeof displayedUnit === 'string' && displayedUnit.includes(' - ')) {
+          const parts = displayedUnit.split(' - ');
+          if (parts.length > 1) {
+              // Verifica se a primeira parte possui semelhança com o condomínio atual
+              const firstPart = parts[0].toLowerCase().trim();
+              const condoNameStr = (settings?.condoName || settings?.systemName || '').toLowerCase().trim();
+              if (condoNameStr && (firstPart.includes(condoNameStr) || condoNameStr.includes(firstPart) || firstPart.length > 15)) {
+                  displayedUnit = parts.slice(1).join(' - ');
+              }
+          }
+      }
+      
+      // Cleanup de redundância forte contra strings sujas ("CondominioXYZ" ou "Vista-Verde" misturado)
+      if (typeof displayedUnit === 'string') {
+           const possibleNames = [settings?.condoName, settings?.systemName, settings?.name, tenantId].filter(Boolean) as string[];
+           
+           for (const pName of possibleNames) {
+               const sanitizeCondo: string = pName.toLowerCase().replace(/[^a-z0-9]/g, '');
+               let currentString: string = displayedUnit as string;
+               const sanitizeUnit: string = currentString.toLowerCase().replace(/[^a-z0-9]/g, '');
+               
+               if (sanitizeCondo && sanitizeCondo.length > 3 && sanitizeUnit.includes(sanitizeCondo)) {
+                   // Substitui o nome exato case-insensitive (se usar formato igual)
+                   displayedUnit = (displayedUnit as string).replace(new RegExp(pName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi'), '');
+                   
+                   // Se falhou (formatos como "VISTA-VERDE" x "Vista Verde"), usa substituição bruta da string original inteira (apenas remove hífens/underscores equivalentes)
+                   let checkString: string = displayedUnit as string;
+                   if (checkString.toLowerCase().replace(/[^a-z0-9]/g, '').includes(sanitizeCondo)) {
+                       // Se ainda tem rastro, varre e tira "VISTA-VERDE"
+                       const regexBruto: RegExp = new RegExp(sanitizeCondo.split('').join('[^a-z0-9]*'), 'gi');
+                       displayedUnit = checkString.replace(regexBruto, '');
+                   }
+               }
+           }
+           
+           displayedUnit = displayedUnit.replace(/^[-\\_ ]+|[-\\_ ]+$/g, '').trim();
+           // Caso fique vazio após a limpeza
+           if (!displayedUnit) return 'MORADOR';
+      }
+
+      return `UNIDADE ${displayedUnit}`;
     })(),
     avatar: user?.photoURL || undefined
   };

@@ -33,7 +33,7 @@ const HistoryDetailsPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { visibleHistory: history, updateHistoryRecord, settings, isMonthClosed, extraFees, users: allSystemUsers, units: allLiveUnits } = useApp();
-    const { isAdmin, profile, accessProfile } = useAuth();
+    const { isAdmin, profile } = useAuth();
     const { showToast } = useToast();
 
     const [record, setRecord] = useState<HistoryRecord | null>(null);
@@ -59,7 +59,8 @@ const HistoryDetailsPage = () => {
         const found = history.find(h => h.id === id);
         if (found) {
             const cloned = JSON.parse(JSON.stringify(found)) as HistoryRecord;
-            if (cloned.units && !hasPermission(profile, 'history', 'all')) {
+            const canViewAll = isAdmin || hasPermission(profile, 'history', 'all');
+            if (cloned.units && !canViewAll) {
                 const linkedUnitIds = profile?.vinculos?.map((v: any) => v.unitId) || [];
                 
                 const isMatch = (id1: string | null | undefined, id2: string | null | undefined) => {
@@ -77,7 +78,7 @@ const HistoryDetailsPage = () => {
             return cloned;
         }
         return null;
-    }, [id, history, accessProfile, profile?.unitId]);
+    }, [id, history, profile]);
 
     useEffect(() => {
         if (initialRecord) {
@@ -94,8 +95,9 @@ const HistoryDetailsPage = () => {
     const r = record as HistoryRecord;
 
     // Immutability: Check if the month is closed (has snapshot)
+    const canViewAll = isAdmin || hasPermission(profile, 'history', 'all');
     const isClosed = isMonthClosed(r.referenceMonth);
-    const canEdit = hasPermission(accessProfile, 'history', 'all') && !isClosed;
+    const canEdit = canViewAll && !isClosed;
 
     const handleReadingChange = (unitId: string, val: number) => {
         if (isClosed) return; // Immutability guard

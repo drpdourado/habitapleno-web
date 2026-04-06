@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.habitarpleno.app',
-  appName: 'Habitar Pleno',
+  appId: 'br.com.habitarpleno',
+  appName: 'habitarpleno-web',
   webDir: 'dist'
 };
 
