@@ -693,7 +693,23 @@ Total................... ${formatCurrency(total).replace('R$', 'R$ ')}`;
                                                             </HabitaBadge>
                                                         )}
                                                     </div>
-                                                    <div className="flex items-center gap-2">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <HabitaIconActionButton
+                                                            icon={<MessageCircle />}
+                                                            variant="outline"
+                                                            size="sm"
+                                                            tooltip="WhatsApp"
+                                                            onClick={() => generateWhatsAppText(unit)}
+                                                        />
+                                                        {!unit.paymentDate && (
+                                                            <HabitaIconActionButton
+                                                                icon={<Copy />}
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                tooltip="PIX"
+                                                                onClick={() => { setSelectedUnitForPix(unit); setIsPixModalOpen(true); }}
+                                                            />
+                                                        )}
                                                         <HabitaIconActionButton
                                                             icon={unit.paymentDate ? <Download /> : <FileText />}
                                                             variant="outline"
@@ -702,13 +718,22 @@ Total................... ${formatCurrency(total).replace('R$', 'R$ ')}`;
                                                             onClick={() => handleDownloadReceipt(unit, unit.paymentDate ? 'recibo' : 'fatura')}
                                                         />
                                                         {canEdit && (
-                                                            <HabitaIconActionButton
-                                                                icon={<Trash2 />}
-                                                                variant="danger"
-                                                                size="sm"
-                                                                tooltip="Excluir"
-                                                                onClick={() => handleDeleteLine(unit.id)}
-                                                            />
+                                                            <>
+                                                                <HabitaIconActionButton
+                                                                    icon={<Save />}
+                                                                    variant="success"
+                                                                    size="sm"
+                                                                    tooltip="Salvar"
+                                                                    onClick={() => handleSaveLine(unit)}
+                                                                />
+                                                                <HabitaIconActionButton
+                                                                    icon={<Trash2 />}
+                                                                    variant="danger"
+                                                                    size="sm"
+                                                                    tooltip="Excluir"
+                                                                    onClick={() => handleDeleteLine(unit.id)}
+                                                                />
+                                                            </>
                                                         )}
                                                     </div>
                                                 </div>
