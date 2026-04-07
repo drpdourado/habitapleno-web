@@ -38,7 +38,7 @@ const ProfilePage = () => {
     const [showCurrentPassword, setShowCurrentPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [isChangingPassword, setIsChangingPassword] = useState(false);
-    
+
     // Modal state
     const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
     const [showResetPasswordConfirm, setShowResetPasswordConfirm] = useState(false);
@@ -85,7 +85,7 @@ const ProfilePage = () => {
             };
 
             const compressedFile = await imageCompression(file, options);
-            
+
             // Call the newly created Profile API
             // It handles BOTH Storage Upload and Firestore Update in one go
             const formData = new FormData();
@@ -94,7 +94,7 @@ const ProfilePage = () => {
             const response = await api.post('/profile', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            
+
             if (response.data.data?.photoURL) {
                 const purePhotoURL = response.data.data.photoURL;
                 // Como agora a URL já tem ?alt=media, usamos &t=...
@@ -118,7 +118,7 @@ const ProfilePage = () => {
     return (
         <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500 pb-16">
             <HabitaContainer>
-                <HabitaContainerHeader 
+                <HabitaContainerHeader
                     title="Meu Perfil"
                     subtitle="Gerencie suas informações de acesso e preferências"
                     icon={<User size={24} />}
@@ -158,12 +158,12 @@ const ProfilePage = () => {
                                                     <HabitaSpinner size="sm" />
                                                 </div>
                                             ) : null}
-                                            
+
                                             {localPhotoURL || profile?.photoURL ? (
-                                                <img 
-                                                    src={localPhotoURL || (profile?.photoURL ? `${profile.photoURL}${profile.photoURL.includes('?') ? '&' : '?'}t=${Date.now()}` : '')} 
-                                                    alt={profile?.name} 
-                                                    className="w-full h-full object-cover transition-opacity duration-300" 
+                                                <img
+                                                    src={localPhotoURL || (profile?.photoURL ? `${profile.photoURL}${profile.photoURL.includes('?') ? '&' : '?'}t=${Date.now()}` : '')}
+                                                    alt={profile?.name}
+                                                    className="w-full h-full object-cover transition-opacity duration-300"
                                                 />
                                             ) : (
                                                 <div className="w-full h-full bg-indigo-50 flex items-center justify-center text-indigo-200">
@@ -171,13 +171,13 @@ const ProfilePage = () => {
                                                 </div>
                                             )}
                                         </div>
-                                        
+
                                         <label className="absolute -bottom-2 -right-2 w-10 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-110 active:scale-95 border-2 border-white">
-                                            <input 
-                                                type="file" 
-                                                className="hidden" 
-                                                accept="image/*" 
-                                                onChange={handlePhotoUpload} 
+                                            <input
+                                                type="file"
+                                                className="hidden"
+                                                accept="image/*"
+                                                onChange={handlePhotoUpload}
                                                 disabled={isUploading}
                                             />
                                             <Camera size={18} />
@@ -185,8 +185,8 @@ const ProfilePage = () => {
                                     </div>
 
                                     <div className="flex flex-col items-center md:items-start text-center md:text-left gap-2">
-                                        <div className="flex flex-col md:flex-row md:items-center gap-3">
-                                            <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight leading-none truncate max-w-[400px]">
+                                        <div className="flex flex-col md:flex-row md:items-center gap-3 w-full overflow-hidden">
+                                            <h2 className="text-xl md:text-2xl font-black text-slate-800 uppercase tracking-tight leading-none truncate max-w-full">
                                                 {profile?.name || 'Seu Nome Aqui'}
                                             </h2>
                                             <div className="flex justify-center md:justify-start">
@@ -203,10 +203,10 @@ const ProfilePage = () => {
 
                             {/* User Info */}
                             <HabitaCard padding="none">
-                                <HabitaCardHeader>
+                                <HabitaCardHeader className="pb-0">
                                     <HabitaHeading level={3}>Informações Pessoais</HabitaHeading>
                                 </HabitaCardHeader>
-                                <HabitaCardContent padding="lg" className="space-y-6">
+                                <HabitaCardContent padding="md" className="pt-2 space-y-6">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2 mb-1 ml-1">
@@ -344,7 +344,7 @@ const ProfilePage = () => {
 
                             {/* Segurança e Acesso — Alteração de Senha */}
                             <HabitaCard padding="none">
-                                <HabitaCardHeader className="flex flex-row items-center gap-3">
+                                <HabitaCardHeader className="flex flex-row items-center justify-start gap-3 text-left pb-0">
                                     <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center shrink-0 border border-amber-100 shadow-sm">
                                         <Lock size={18} />
                                     </div>
@@ -352,131 +352,131 @@ const ProfilePage = () => {
                                         Segurança e Acesso
                                     </HabitaHeading>
                                 </HabitaCardHeader>
-                                <HabitaCardContent padding="lg">
+                                <HabitaCardContent padding="md" className="pt-2">
 
-                        <form
-                            onSubmit={async (e) => {
-                                e.preventDefault();
-                                if (!user?.email) return;
+                                    <form
+                                        onSubmit={async (e) => {
+                                            e.preventDefault();
+                                            if (!user?.email) return;
 
-                                // Validations
-                                if (!currentPassword) {
-                                    showToast('Informe a senha atual.', 'warning');
-                                    return;
-                                }
-                                if (newPassword.length < 6) {
-                                    showToast('A nova senha deve ter no mínimo 6 caracteres.', 'warning');
-                                    return;
-                                }
-                                if (newPassword !== confirmPassword) {
-                                    showToast('As senhas não coincidem.', 'warning');
-                                    return;
-                                }
-                                if (currentPassword === newPassword) {
-                                    showToast('A nova senha deve ser diferente da atual.', 'warning');
-                                    return;
-                                }
+                                            // Validations
+                                            if (!currentPassword) {
+                                                showToast('Informe a senha atual.', 'warning');
+                                                return;
+                                            }
+                                            if (newPassword.length < 6) {
+                                                showToast('A nova senha deve ter no mínimo 6 caracteres.', 'warning');
+                                                return;
+                                            }
+                                            if (newPassword !== confirmPassword) {
+                                                showToast('As senhas não coincidem.', 'warning');
+                                                return;
+                                            }
+                                            if (currentPassword === newPassword) {
+                                                showToast('A nova senha deve ser diferente da atual.', 'warning');
+                                                return;
+                                            }
 
-                                        setIsChangingPassword(true);
-                                        try {
-                                            await api.post('/profile/change-password', {
-                                                currentPassword,
-                                                newPassword
-                                            });
+                                            setIsChangingPassword(true);
+                                            try {
+                                                await api.post('/profile/change-password', {
+                                                    currentPassword,
+                                                    newPassword
+                                                });
 
-                                            showToast('Senha alterada com sucesso!', 'success');
-                                            setCurrentPassword('');
-                                            setNewPassword('');
-                                            setConfirmPassword('');
-                                        } catch (error: any) {
-                                            console.error('Erro ao alterar senha:', error);
-                                            showToast('Erro ao alterar senha: ' + (error.response?.data?.error || error.message), 'error');
-                                        } finally {
-                                            setIsChangingPassword(false);
-                                        }
-                                    }}
-                                    className="space-y-6"
-                                >
-                                    {/* Current Password */}
-                                    <div className="relative group">
-                                        <HabitaInput
-                                            label="Senha Atual"
-                                            type={showCurrentPassword ? 'text' : 'password'}
-                                            value={currentPassword}
-                                            onChange={(e: any) => setCurrentPassword(e.target.value)}
-                                            placeholder="••••••••"
-                                            autoComplete="current-password"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                                            className="absolute right-3 top-[34px] p-1 text-slate-400 hover:text-indigo-600 transition-colors"
-                                            tabIndex={-1}
-                                        >
-                                            {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                                        </button>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
-                                        {/* New Password */}
+                                                showToast('Senha alterada com sucesso!', 'success');
+                                                setCurrentPassword('');
+                                                setNewPassword('');
+                                                setConfirmPassword('');
+                                            } catch (error: any) {
+                                                console.error('Erro ao alterar senha:', error);
+                                                showToast('Erro ao alterar senha: ' + (error.response?.data?.error || error.message), 'error');
+                                            } finally {
+                                                setIsChangingPassword(false);
+                                            }
+                                        }}
+                                        className="space-y-6"
+                                    >
+                                        {/* Current Password */}
                                         <div className="relative group">
                                             <HabitaInput
-                                                label="Nova Senha"
-                                                type={showNewPassword ? 'text' : 'password'}
-                                                value={newPassword}
-                                                onChange={(e: any) => setNewPassword(e.target.value)}
-                                                placeholder="Mínimo 6 caracteres"
-                                                autoComplete="new-password"
-                                                error={newPassword.length > 0 && newPassword.length < 6 ? "Mínimo 6 caracteres" : undefined}
+                                                label="Senha Atual"
+                                                type={showCurrentPassword ? 'text' : 'password'}
+                                                value={currentPassword}
+                                                onChange={(e: any) => setCurrentPassword(e.target.value)}
+                                                placeholder="••••••••"
+                                                autoComplete="current-password"
                                             />
                                             <button
                                                 type="button"
-                                                onClick={() => setShowNewPassword(!showNewPassword)}
+                                                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                                                 className="absolute right-3 top-[34px] p-1 text-slate-400 hover:text-indigo-600 transition-colors"
                                                 tabIndex={-1}
                                             >
-                                                {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                             </button>
                                         </div>
 
-                                        {/* Confirm New Password */}
-                                        <HabitaInput
-                                            label="Confirmar Nova Senha"
-                                            type="password"
-                                            value={confirmPassword}
-                                            onChange={(e: any) => setConfirmPassword(e.target.value)}
-                                            placeholder="Repita a nova senha"
-                                            autoComplete="new-password"
-                                            error={confirmPassword && confirmPassword !== newPassword ? "As senhas não coincidem" : undefined}
-                                        />
-                                    </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+                                            {/* New Password */}
+                                            <div className="relative group">
+                                                <HabitaInput
+                                                    label="Nova Senha"
+                                                    type={showNewPassword ? 'text' : 'password'}
+                                                    value={newPassword}
+                                                    onChange={(e: any) => setNewPassword(e.target.value)}
+                                                    placeholder="Mínimo 6 caracteres"
+                                                    autoComplete="new-password"
+                                                    error={newPassword.length > 0 && newPassword.length < 6 ? "Mínimo 6 caracteres" : undefined}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowNewPassword(!showNewPassword)}
+                                                    className="absolute right-3 top-[34px] p-1 text-slate-400 hover:text-indigo-600 transition-colors"
+                                                    tabIndex={-1}
+                                                >
+                                                    {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                </button>
+                                            </div>
 
-                                    {/* Submit */}
-                                    <div className="pt-4 flex flex-col sm:flex-row gap-4">
-                                        <HabitaButton
-                                            type="submit"
-                                            isLoading={isChangingPassword}
-                                            disabled={!currentPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword}
-                                            variant="primary"
-                                            className="px-8 shadow-md"
-                                            icon={<Lock size={16} />}
-                                        >
-                                            Efetivar Nova Senha
-                                        </HabitaButton>
+                                            {/* Confirm New Password */}
+                                            <HabitaInput
+                                                label="Confirmar Nova Senha"
+                                                type="password"
+                                                value={confirmPassword}
+                                                onChange={(e: any) => setConfirmPassword(e.target.value)}
+                                                placeholder="Repita a nova senha"
+                                                autoComplete="new-password"
+                                                error={confirmPassword && confirmPassword !== newPassword ? "As senhas não coincidem" : undefined}
+                                            />
+                                        </div>
 
-                                        <HabitaButton
-                                            type="button"
-                                            onClick={() => setShowResetPasswordConfirm(true)}
-                                            variant="outline"
-                                            icon={<Mail size={16} />}
-                                        >
-                                            Redefinir via E-mail
-                                        </HabitaButton>
-                                    </div>
-                                </form>
-                            </HabitaCardContent>
-                        </HabitaCard>
-                    </div>
+                                        {/* Submit */}
+                                        <div className="pt-4 flex flex-col sm:flex-row gap-4">
+                                            <HabitaButton
+                                                type="submit"
+                                                isLoading={isChangingPassword}
+                                                disabled={!currentPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword}
+                                                variant="primary"
+                                                className="px-8 shadow-md"
+                                                icon={<Lock size={16} />}
+                                            >
+                                                Efetivar Nova Senha
+                                            </HabitaButton>
+
+                                            <HabitaButton
+                                                type="button"
+                                                onClick={() => setShowResetPasswordConfirm(true)}
+                                                variant="outline"
+                                                icon={<Mail size={16} />}
+                                            >
+                                                Redefinir via E-mail
+                                            </HabitaButton>
+                                        </div>
+                                    </form>
+                                </HabitaCardContent>
+                            </HabitaCard>
+                        </div>
 
                         {/* Info Card Column */}
                         <div className="lg:col-span-4 space-y-6">
@@ -484,7 +484,7 @@ const ProfilePage = () => {
                                 <ShieldCheck size={32} className="text-white mb-6" />
                                 <h3 className="text-xl font-black text-white uppercase tracking-tight">Segurança Ativa</h3>
                                 <p className="text-indigo-100 text-sm font-medium leading-relaxed mt-4">
-                                    Sua sessão é protegida por autenticação oficial do Habita. Lembre-se de sempre sair do sistema ao utilizar computadores compartilhados ou de terceiros.
+                                    Sua sessão é protegida por autenticação oficial do Habitar Pleno. Lembre-se de sempre sair do sistema ao utilizar computadores compartilhados ou de terceiros.
                                 </p>
                             </HabitaCard>
                         </div>
@@ -502,7 +502,7 @@ const ProfilePage = () => {
                     <div className="flex gap-3 w-full">
                         <HabitaButton variant="outline" onClick={() => setShowSignOutConfirm(false)} className="flex-1">Cancelar</HabitaButton>
                         <HabitaButton variant="danger" onClick={async () => {
-                            await api.post('/auth/logout').catch(() => {});
+                            await api.post('/auth/logout').catch(() => { });
                             signOut();
                             setShowSignOutConfirm(false);
                             navigate('/login');
@@ -527,14 +527,14 @@ const ProfilePage = () => {
                     <div className="flex gap-3 w-full">
                         <HabitaButton variant="outline" onClick={() => setShowResetPasswordConfirm(false)} className="flex-1">Cancelar</HabitaButton>
                         <HabitaButton variant="primary" onClick={async () => {
-                             try {
-                                 await resetPassword(user.email!);
-                                 showToast('E-mail de redefinição enviado!', 'success');
-                             } catch (_e) {
-                                 showToast('Erro ao enviar e-mail.', 'error');
-                             } finally {
-                                 setShowResetPasswordConfirm(false);
-                             }
+                            try {
+                                await resetPassword(user.email!);
+                                showToast('E-mail de redefinição enviado!', 'success');
+                            } catch (_e) {
+                                showToast('Erro ao enviar e-mail.', 'error');
+                            } finally {
+                                setShowResetPasswordConfirm(false);
+                            }
                         }} className="flex-1">Enviar E-mail</HabitaButton>
                     </div>
                 }
@@ -544,7 +544,7 @@ const ProfilePage = () => {
                         <Mail size={32} />
                     </div>
                     <p className="text-slate-600 font-medium leading-relaxed">
-                        Enviaremos um link de redefinição para o e-mail:<br/>
+                        Enviaremos um link de redefinição para o e-mail:<br />
                         <span className="font-bold text-slate-900">{user.email}</span>
                     </p>
                 </div>

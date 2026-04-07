@@ -230,8 +230,8 @@ const UnitsPage = () => {
             const blockRes = blockA.localeCompare(blockB, undefined, { numeric: true, sensitivity: 'base' });
             if (blockRes !== 0) return blockRes;
 
-            const unitNumA = a.id.split('-')[0].trim();
-            const unitNumB = b.id.split('-')[0].trim();
+            const unitNumA = String(a.number || a.Numero || (a.id.includes('-') ? a.id.split('-')[0] : a.id)).trim();
+            const unitNumB = String(b.number || b.Numero || (b.id.includes('-') ? b.id.split('-')[0] : b.id)).trim();
             return unitNumA.localeCompare(unitNumB, undefined, { numeric: true, sensitivity: 'base' });
         });
     }, [units, searchTerm, isAdmin, profile]);
@@ -785,7 +785,7 @@ const UnitsPage = () => {
                                             <div className="flex flex-col">
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-bold text-slate-700 text-sm leading-tight tracking-tight">
-                                                        Unidade {unit.id.includes('-') ? unit.id.replace(`-${unit.block}`, '') : unit.id}
+                                                        Unidade {unit.id || '-'}
                                                     </span>
                                                     {unit.block && (
                                                         <HabitaBadge variant="neutral" size="xs" className="font-black tracking-widest bg-slate-100 border-slate-200">
@@ -860,7 +860,7 @@ const UnitsPage = () => {
 
                                 {/* Desktop Layout */}
                                 <HabitaTD label="Unidade" className="hidden md:table-cell font-bold text-slate-900 text-sm tracking-tight text-center">
-                                    {unit.id.includes('-') ? unit.id.replace(`-${unit.block}`, '') : unit.id}
+                                    {unit.id || '-'}
                                 </HabitaTD>
                                 <HabitaTD label="Bloco" className="hidden md:table-cell font-bold text-slate-500 text-sm tracking-widest text-center">
                                     {unit.block || '-'}
@@ -1484,8 +1484,8 @@ const UnitsPage = () => {
                 onClose={() => setIsImportModalOpen(false)}
                 onImport={async (data) => {
                     try {
-                        const res = await api.post('/units/bulk', data);
-                        showToast(`${res.data?.total || 0} unidades importadas com sucesso!`, 'success');
+                        const res = await api.post('/units/bulk', { units: data });
+                        showToast(`${res.data?.count || 0} unidades importadas com sucesso!`, 'success');
                         setIsImportModalOpen(false);
                         await loadData();
                     } catch (error: any) {

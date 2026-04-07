@@ -41,8 +41,8 @@ export const ImportUnitsModal: React.FC<ImportUnitsModalProps> = ({ isOpen, onCl
 
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Modelo');
-        // Exporting as CSV as requested
-        XLSX.writeFile(wb, 'Modelo_Importacao_Unidades.csv');
+        // Exporting as CSV as requested with semicolon delimiter for Excel compatibility
+        XLSX.writeFile(wb, 'Modelo_Importacao_Unidades.csv', { FS: ';' } as any);
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
