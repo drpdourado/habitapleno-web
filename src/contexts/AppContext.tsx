@@ -443,7 +443,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     gasTrends,
     reloadCondoData, updateSettings, getUnitType, bulkAddUnits,
     confirmUnitPayment, closeMonth, initNewMonth,
-    addMonthClosure: async (d: any) => { await api.post('/financial/close-month', d); await reloadCondoData(); },
+    addMonthClosure: async () => { await reloadCondoData(); },
     deleteMonthClosure,
     isMonthClosed,
     addOcorrencia, updateOcorrencia, deleteOcorrencia,

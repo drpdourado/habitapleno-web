@@ -33,7 +33,8 @@ export function FinancialPage() {
         bankAccounts, 
         settings, 
         isMonthClosed,
-        reloadCondoData 
+        reloadCondoData,
+        updateBankAccount
     } = useApp();
     
     const { isAdmin, isSuperAdmin, accessProfile } = useAuth();
@@ -120,6 +121,7 @@ export function FinancialPage() {
             reserveBalance: 0
         }
     });
+
     const fetchTransactions = async () => {
         try {
             const response = await api.get('/financial/transactions', {
@@ -274,8 +276,7 @@ export function FinancialPage() {
         }
     
         try {
-            await api.put(`/bank-accounts/${bankId}`, { currentBalance: newBalance });
-            await reloadCondoData();
+            await updateBankAccount({ id: bankId, currentBalance: newBalance });
     
             setEditingBankId(null);
             setEditBankBalanceValue('');

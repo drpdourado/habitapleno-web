@@ -52,6 +52,7 @@ export const MonthClosurePage: React.FC = () => {
     const {
         closures,
         balances,
+        bankAccounts,
         addMonthClosure,
         deleteMonthClosure
     } = useApp();
@@ -71,6 +72,14 @@ export const MonthClosurePage: React.FC = () => {
         return `${month}-${year}`;
     }, [selectedDate]);
 
+    const prevMonthRef = useMemo(() => {
+        const prevDate = new Date(selectedDate);
+        prevDate.setMonth(prevDate.getMonth() - 1);
+        const month = (prevDate.getMonth() + 1).toString().padStart(2, '0');
+        const year = prevDate.getFullYear();
+        return `${month}/${year}`;
+    }, [selectedDate]);
+
     const isClosed = adminService.isMonthClosed(closureId, closures);
 
 
@@ -83,10 +92,19 @@ export const MonthClosurePage: React.FC = () => {
                 setRealCashBalance(currentClosure.realCashBalance ?? 0);
             }
         } else {
-            setRealBankBalance(balances.bank);
-            setRealCashBalance(balances.cash);
+            // Se o saldo for undefined ou zero no balances, tenta pegar da soma das contas bancárias
+            const currentBankSum = bankAccounts
+                .filter(a => a.status === 'ativa' && a.type !== 'investimento')
+                .reduce((acc, a) => acc + (a.currentBalance || 0), 0);
+            
+            const currentCashSum = bankAccounts
+                .filter(a => a.status === 'ativa' && a.name.toLowerCase().includes('caixa'))
+                .reduce((acc, a) => acc + (a.currentBalance || 0), 0);
+
+            setRealBankBalance(balances.bank ?? (currentBankSum > 0 ? currentBankSum : ''));
+            setRealCashBalance(balances.cash ?? (currentCashSum > 0 ? currentCashSum : ''));
         }
-    }, [selectedDate, isClosed, closures, closureId, balances]);
+    }, [selectedDate, isClosed, closures, closureId, balances, bankAccounts]);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -135,14 +153,28 @@ export const MonthClosurePage: React.FC = () => {
             }
         }
         
+        let initialBalance = 0;
+        if (apiStats?.initialBalance) {
+            initialBalance = apiStats.initialBalance;
+        } else {
+            // Tenta encontrar o fechamento do mês anterior
+            const prevClosure = closures.find(c => c.referenceMonth === prevMonthRef || c.id === prevMonthRef.replace('/', '-'));
+            if (prevClosure) {
+                initialBalance = prevClosure.projectedBalance || prevClosure.finalBalance || 0;
+            } else {
+                // Se não tem fechamento anterior, usa a soma dos saldos iniciais das contas
+                initialBalance = bankAccounts.reduce((acc, b) => acc + (b.initialBalance || 0), 0);
+            }
+        }
+
         if (apiStats) {
             return {
                 hasGas: (apiStats.historyCount || 0) > 0,
                 incomes: apiStats.totalRevenues || 0,
                 expenses: apiStats.totalExpenses || 0,
                 balance: apiStats.monthBalance || 0,
-                initialBalance: apiStats.initialBalance || 0,
-                projectedBalance: apiStats.projectedBalance || 0
+                initialBalance,
+                projectedBalance: initialBalance + (apiStats.totalRevenues || 0) - (apiStats.totalExpenses || 0)
             };
         }
 
@@ -154,7 +186,7 @@ export const MonthClosurePage: React.FC = () => {
             initialBalance: 0,
             projectedBalance: 0
         };
-    }, [isClosed, closures, closureId, apiStats, refMonth]);
+    }, [isClosed, closures, closureId, apiStats, refMonth, prevMonthRef, bankAccounts]);
 
     const difference = useMemo(() => {
         const bank = typeof realBankBalance === 'number' ? realBankBalance : 0;
@@ -171,11 +203,11 @@ export const MonthClosurePage: React.FC = () => {
                     closedBy: profile?.name || 'Administrador',
                     realBankBalance: typeof realBankBalance === 'number' ? realBankBalance : 0,
                     realCashBalance: typeof realCashBalance === 'number' ? realCashBalance : 0,
-                    // Enviamos o que recebemos da API para registro, o backend recalculará para validação
-                    initialBalance: apiStats?.initialBalance || 0,
-                    totalIncomes: apiStats?.totalRevenues || 0,
-                    totalExpenses: apiStats?.totalExpenses || 0,
-                    projectedBalance: apiStats?.projectedBalance || 0
+                    // Enviamos o valor calculado com fallback para garantir snapshot correto
+                    initialBalance: displayStats.initialBalance,
+                    totalIncomes: displayStats.incomes,
+                    totalExpenses: displayStats.expenses,
+                    projectedBalance: displayStats.projectedBalance
                 }
             );
 

@@ -743,8 +743,8 @@ const DashboardPage = () => {
                 padding={isMobile ? "none" : "lg"}
             >
                 {/* 1. HEADER UNIFICADO (Saudação + Controles + Atalhos) */}
-                <div className="space-y-6 mb-6 pb-6 border-b border-slate-200">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="space-y-2 md:space-y-6 mb-0 pb-0 md:pb-4 border-b border-slate-200">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-1 md:gap-6">
                         <div className="flex items-center gap-4">
                             <HabitaAvatar
                                 size="md"
@@ -760,8 +760,8 @@ const DashboardPage = () => {
                             </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-3">
-                            <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-end gap-3">
+                            <div className="flex items-end gap-2">
                                 {(isAdmin || isAnyOperator) && (
                                     <HabitaCombobox
                                         options={refMonthOptions}
@@ -775,7 +775,7 @@ const DashboardPage = () => {
                                 )}
 
                                 {isAdmin && (
-                                    <div className="pt-[18px]">
+                                    <div>
                                         <HabitaButton
                                             onClick={() => setIsCloseModalOpen(true)}
                                             disabled={!!currentRecord}
@@ -859,7 +859,7 @@ const DashboardPage = () => {
                     </div>
                 </div>
 
-                <div className="flex-1 flex flex-col gap-6 min-h-0">
+                <div className="flex-1 flex flex-col gap-4 md:gap-6 min-h-0">
                     {(isAdmin || isAnyOperator) && (
                         <>
                             {/* Versão Desktop */}
@@ -917,8 +917,8 @@ const DashboardPage = () => {
                                     label="BANCOS (SALDO TOTAL)"
                                     value={(stats.banks).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                     icon={<Building2 />}
-                                    variant="indigo"
-                                    subtext={<span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{summary?.activeBanksCount ?? dashboardStats?.activeBanksCount ?? 0} Contas Bancárias Ativas</span>}
+                                    variant="blue-solid"
+                                    subtext={<span className="text-[10px] text-blue-100/70 font-black uppercase tracking-widest">{summary?.activeBanksCount ?? dashboardStats?.activeBanksCount ?? 0} Contas Bancárias Ativas</span>}
                                     onClick={() => setIsBankDetailsModalOpen(true)}
                                 />
 

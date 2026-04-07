@@ -11,7 +11,7 @@ interface HabitaStatCardProps extends React.HTMLAttributes<HTMLDivElement> {
     value: string | number;
     type: 'up' | 'down' | 'neutral';
   };
-  variant?: 'indigo' | 'emerald' | 'amber' | 'rose' | 'slate';
+  variant?: 'indigo' | 'emerald' | 'amber' | 'rose' | 'slate' | 'blue-solid';
   subtext?: React.ReactNode;
   badge?: React.ReactNode;
   valueClassName?: string;
@@ -39,17 +39,22 @@ export const HabitaStatCard: React.FC<HabitaStatCardProps> = ({
     amber: 'bg-amber-50 text-amber-600',
     rose: 'bg-rose-50 text-rose-600',
     slate: 'bg-slate-50 text-slate-500',
+    'blue-solid': 'bg-white/20 text-white',
   };
 
   return (
     <div className={cn(
       "bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-3 transition-all",
+      variant === 'blue-solid' && "bg-blue-600 border-blue-500 shadow-blue-200/50",
       props.onClick && "cursor-pointer hover:border-indigo-300 hover:shadow-md active:scale-[0.98]",
       className
     )} {...props}>
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-1">
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{label}</span>
+          <span className={cn(
+            "text-[10px] font-black uppercase tracking-[0.2em]",
+            variant === 'blue-solid' ? "text-blue-100/80" : "text-slate-400"
+          )}>{label}</span>
           {badge}
         </div>
         <div className={cn("p-2 rounded-lg", iconVariants[variant])}>
@@ -61,7 +66,10 @@ export const HabitaStatCard: React.FC<HabitaStatCardProps> = ({
       
       <div className="flex flex-col gap-1">
         <div className="flex items-baseline gap-2">
-          <h4 className={cn("text-xl md:text-2xl font-normal tracking-tight", valueClassName || "text-slate-900")}>
+          <h4 className={cn(
+            "text-xl md:text-2xl font-normal tracking-tight",
+            variant === 'blue-solid' ? "text-white" : (valueClassName || "text-slate-900")
+          )}>
             {value}
           </h4>
           {trend && (
