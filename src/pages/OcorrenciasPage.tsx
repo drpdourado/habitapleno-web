@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
     AlertCircle, Plus,
     Calendar, Tag,
@@ -13,6 +13,7 @@ import { useToast } from '../contexts/ToastContext';
 import { useApp, type Ocorrencia } from '../contexts/AppContext';
 import * as dbUtils from '../utils/FirebaseUtils';
 import { Camera, Image as ImageIcon, X } from 'lucide-react';
+import heic2any from 'heic2any';
 
 import { HabitaCard } from '../components/ui/HabitaCard';
 import { HabitaButton } from '../components/ui/HabitaButton';
@@ -36,10 +37,58 @@ const CATEGORIAS = [
     'Infraestrutura',
     'Segurança',
     'Limpeza',
-    'Vizinhança',
+    'Vizinhança',
     'Manutenção',
     'Outros'
 ];
+
+interface HeicImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
+    src: string;
+}
+
+const HeicImage = ({ src, alt, className, ...props }: HeicImageProps) => {
+    const [processedSrc, setProcessedSrc] = useState<string>(src);
+    const [isConverting, setIsConverting] = useState(false);
+
+    useEffect(() => {
+        const isHeic = src.toLowerCase().includes('.heic') || src.toLowerCase().includes('.heif');
+        
+        if (isHeic) {
+            const convertHeic = async () => {
+                setIsConverting(true);
+                try {
+                    const response = await fetch(src);
+                    const blob = await response.blob();
+                    const convertedBlob = await heic2any({
+                        blob: blob,
+                        toType: 'image/jpeg',
+                        quality: 0.7
+                    });
+                    const resultBlob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+                    const url = URL.createObjectURL(resultBlob);
+                    setProcessedSrc(url);
+                } catch (err) {
+                    console.error("Failed to convert HEIC for display:", err);
+                } finally {
+                    setIsConverting(false);
+                }
+            };
+            convertHeic();
+        } else {
+            setProcessedSrc(src);
+        }
+    }, [src]);
+
+    if (isConverting) {
+        return (
+            <div className={cn("flex items-center justify-center bg-slate-100", className)}>
+                <HabitaSpinner size="xs" />
+            </div>
+        );
+    }
+
+    return <img src={processedSrc} alt={alt} className={className} {...props} />;
+};
 
 export function OcorrenciasPage() {
     const { isAdmin, isOperator, profile } = useAuth();
@@ -273,7 +322,7 @@ export function OcorrenciasPage() {
                         >
                             {oc.photoUrl ? (
                                 <div className="h-40 -mx-6 -mt-6 mb-6 overflow-hidden relative border-b border-slate-100 bg-slate-100 flex items-center justify-center">
-                                    <img 
+                                    <HeicImage 
                                         src={oc.photoUrl} 
                                         alt={oc.titulo} 
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
@@ -310,7 +359,7 @@ export function OcorrenciasPage() {
                                     </HabitaBadge>
                                 </div>
                                 
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                                     {(isAdmin || isOperator || profile?.uid === oc.unitId) && (
                                         <HabitaIconActionButton
                                             icon={<Pencil />}
@@ -454,9 +503,31 @@ export function OcorrenciasPage() {
                             label="Documentação Fotográfica"
                             description="Regra de Ouro: Máximo 500KB. Largura 1280px."
                             accept="image/*"
-                            onFilesSelected={(files) => {
+                            onFilesSelected={async (files) => {
                                 if (files.length > 0) {
-                                    const file = files[0];
+                                    let file = files[0];
+                                    
+                                    // Handle HEIC/HEIF format (iPhone images)
+                                    const extension = file.name.split('.').pop()?.toLowerCase();
+                                    if (extension === 'heic' || extension === 'heif') {
+                                        try {
+                                            const convertedBlob = await heic2any({
+                                                blob: file,
+                                                toType: 'image/jpeg',
+                                                quality: 0.8
+                                            });
+                                            
+                                            const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+                                            file = new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), {
+                                                type: 'image/jpeg'
+                                            });
+                                        } catch (err) {
+                                            console.error("HEIC conversion failed:", err);
+                                            showToast('Erro ao converter imagem do iPhone. Tente converter para JPG antes de subir.', 'error');
+                                            return;
+                                        }
+                                    }
+
                                     setPhotoFile(file);
                                     const reader = new FileReader();
                                     reader.onloadend = () => setPhotoPreview(reader.result as string);
@@ -544,7 +615,7 @@ export function OcorrenciasPage() {
                             <div className="w-full">
                                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Registro Fotográfico</h4>
                                 <div className="relative aspect-video w-full rounded-2xl overflow-hidden shadow-lg border border-slate-100 group">
-                                    <img 
+                                    <HeicImage 
                                         src={isDetailOpen.photoUrl} 
                                         alt={isDetailOpen.titulo} 
                                         className="w-full h-full object-cover"
@@ -641,7 +712,7 @@ export function OcorrenciasPage() {
                 {fullScreenImage && (
                     <div className="flex flex-col items-center justify-center min-h-[70vh]">
                         <div className="relative max-w-5xl w-full rounded-2xl overflow-hidden shadow-2xl border border-slate-100">
-                            <img 
+                            <HeicImage 
                                 src={fullScreenImage} 
                                 alt="Visualização em tamanho real" 
                                 className="w-full h-auto object-contain max-h-[85vh]"

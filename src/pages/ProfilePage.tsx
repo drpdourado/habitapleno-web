@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useToast } from '../contexts/ToastContext';
-import { User, Mail, ShieldCheck, LogOut, Key, Fingerprint, Edit2, Check, X, Lock, Phone, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, ShieldCheck, LogOut, Key, Fingerprint, Edit2, Check, X, Lock, Phone, Eye, EyeOff, Camera } from 'lucide-react';
+import imageCompression from 'browser-image-compression';
+import { HabitaSpinner } from '../components/ui/HabitaSpinner';
 import { HabitaButton } from '../components/ui/HabitaButton';
 import { HabitaContainer, HabitaContainerHeader, HabitaContainerContent } from '../components/ui/HabitaContainer';
 import { HabitaCard, HabitaCardHeader, HabitaCardContent } from '../components/ui/HabitaCard';
@@ -26,6 +28,8 @@ const ProfilePage = () => {
     const [isEditingPhone, setIsEditingPhone] = useState(false);
     const [editedPhone, setEditedPhone] = useState(profile?.phone || '');
     const [isSaving, setIsSaving] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [localPhotoURL, setLocalPhotoURL] = useState(profile?.photoURL || '');
 
     // Password change state
     const [currentPassword, setCurrentPassword] = useState('');
@@ -67,6 +71,48 @@ const ProfilePage = () => {
         }
     };
 
+    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !user) return;
+
+        setIsUploading(true);
+        try {
+            // Compress image locally first (~150KB)
+            const options = {
+                maxSizeMB: 0.15,
+                maxWidthOrHeight: 400,
+                useWebWorker: true,
+            };
+
+            const compressedFile = await imageCompression(file, options);
+            
+            // Call the newly created Profile API
+            // It handles BOTH Storage Upload and Firestore Update in one go
+            const formData = new FormData();
+            formData.append('file', compressedFile);
+            console.log('Sending photo to /api/profile via POST...');
+            const response = await api.post('/profile', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            
+            if (response.data.data?.photoURL) {
+                const purePhotoURL = response.data.data.photoURL;
+                // Como agora a URL já tem ?alt=media, usamos &t=...
+                setLocalPhotoURL(`${purePhotoURL}${purePhotoURL.includes('?') ? '&' : '?'}t=${Date.now()}`);
+            }
+
+            showToast('Foto de perfil atualizada com sucesso!', 'success');
+            // Mantemos o reload apenas para garantir que o Contexto (useAuth) se atualize
+            setTimeout(() => window.location.reload(), 1500);
+        } catch (error: any) {
+            console.error('Detailed photo upload error:', error);
+            console.error('Error status:', error.response?.status);
+            showToast('Erro ao atualizar foto: ' + (error.response?.data?.error || error.message), 'error');
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
     if (!user) return null;
 
     return (
@@ -101,6 +147,60 @@ const ProfilePage = () => {
                     <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8">
                         {/* Details Column */}
                         <div className="lg:col-span-8 space-y-8">
+                            {/* User Header with Avatar */}
+                            <HabitaCard padding="lg" className="overflow-hidden relative bg-gradient-to-br from-indigo-50 to-white">
+                                <div className="flex flex-col md:flex-row items-center gap-8">
+                                    {/* Avatar with Upload Control */}
+                                    <div className="relative group shrink-0">
+                                        <div className="w-32 h-32 rounded-3xl overflow-hidden border-4 border-white shadow-xl bg-slate-100 flex items-center justify-center relative">
+                                            {isUploading ? (
+                                                <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center z-10 animate-in fade-in">
+                                                    <HabitaSpinner size="sm" />
+                                                </div>
+                                            ) : null}
+                                            
+                                            {localPhotoURL || profile?.photoURL ? (
+                                                <img 
+                                                    src={localPhotoURL || (profile?.photoURL ? `${profile.photoURL}${profile.photoURL.includes('?') ? '&' : '?'}t=${Date.now()}` : '')} 
+                                                    alt={profile?.name} 
+                                                    className="w-full h-full object-cover transition-opacity duration-300" 
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full bg-indigo-50 flex items-center justify-center text-indigo-200">
+                                                    <User size={64} />
+                                                </div>
+                                            )}
+                                        </div>
+                                        
+                                        <label className="absolute -bottom-2 -right-2 w-10 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-110 active:scale-95 border-2 border-white">
+                                            <input 
+                                                type="file" 
+                                                className="hidden" 
+                                                accept="image/*" 
+                                                onChange={handlePhotoUpload} 
+                                                disabled={isUploading}
+                                            />
+                                            <Camera size={18} />
+                                        </label>
+                                    </div>
+
+                                    <div className="flex flex-col items-center md:items-start text-center md:text-left gap-2">
+                                        <div className="flex flex-col md:flex-row md:items-center gap-3">
+                                            <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight leading-none truncate max-w-[400px]">
+                                                {profile?.name || 'Seu Nome Aqui'}
+                                            </h2>
+                                            <div className="flex justify-center md:justify-start">
+                                                <HabitaBadge variant="indigo" size="xs" className="font-black">USUÁRIO</HabitaBadge>
+                                            </div>
+                                        </div>
+                                        <p className="text-slate-400 font-medium text-sm flex items-center gap-2">
+                                            <Mail size={14} className="text-slate-300" />
+                                            {user.email}
+                                        </p>
+                                    </div>
+                                </div>
+                            </HabitaCard>
+
                             {/* User Info */}
                             <HabitaCard padding="none">
                                 <HabitaCardHeader>

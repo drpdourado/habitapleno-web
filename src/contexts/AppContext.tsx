@@ -101,7 +101,8 @@ export interface MuralNotice {
 export interface Manutencao {
   id: string;
   titulo: string;
-  frequenciaMeses: number;
+  frequenciaValor: number;
+  frequenciaUnidade: 'dias' | 'meses' | 'anos';
   ultimaRealizacao: string;
   proximaData: string;
   status?: string;

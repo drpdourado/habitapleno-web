@@ -104,7 +104,6 @@ export function MuralPage() {
                     expiryDate: expiryDate || null,
                     date: new Date().toISOString()
                 };
-                await condoService.saveNotice(updated, false, tenantId);
                 await updateNotice(updated);
                 showToast('Aviso atualizado com sucesso!', 'success');
             } else {
@@ -123,7 +122,6 @@ export function MuralPage() {
                     isArchived: false,
                     status
                 };
-                await condoService.saveNotice(newNotice, true, tenantId);
                 await addNotice(newNotice);
                 
                 if (status === 'pending') {
@@ -266,7 +264,7 @@ export function MuralPage() {
                                                 )}
                                             </div>
                                             
-                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                                                 {(canManageNotices || notice.authorId === user?.uid) && (
                                                     <HabitaIconActionButton
                                                         icon={<Pencil />}

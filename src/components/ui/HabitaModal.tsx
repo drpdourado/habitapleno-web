@@ -48,7 +48,7 @@ export const HabitaModal: React.FC<HabitaModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6">
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 pb-28 sm:pb-6 sm:p-6">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300"

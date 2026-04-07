@@ -35,7 +35,8 @@ export function ManutencoesPage() {
     // Form state
     const [formData, setFormData] = useState({
         titulo: '',
-        frequenciaMeses: 1,
+        frequenciaValor: 1,
+        frequenciaUnidade: 'meses' as 'dias' | 'meses' | 'anos',
         ultimaRealizacao: new Date().toISOString().split('T')[0]
     });
 
@@ -49,24 +50,49 @@ export function ManutencoesPage() {
             setEditingManutencao(m);
             setFormData({
                 titulo: m.titulo,
-                frequenciaMeses: m.frequenciaMeses,
+                frequenciaValor: m.frequenciaValor || 1,
+                frequenciaUnidade: m.frequenciaUnidade || 'meses',
                 ultimaRealizacao: m.ultimaRealizacao
             });
         } else {
             setEditingManutencao(null);
             setFormData({
                 titulo: '',
-                frequenciaMeses: 1,
+                frequenciaValor: 1,
+                frequenciaUnidade: 'meses',
                 ultimaRealizacao: new Date().toISOString().split('T')[0]
             });
         }
         setIsModalOpen(true);
     };
 
-    const calcProximaData = (ultimaRealizacao: string, frequenciaMeses: number): string => {
-        const data = new Date(ultimaRealizacao + 'T00:00:00');
-        data.setMonth(data.getMonth() + frequenciaMeses);
+    const calcProximaData = (ultimaRealizacao: string, valor: number, unidade: 'dias' | 'meses' | 'anos'): string => {
+        const data = new Date(ultimaRealizacao + 'T12:00:00'); // Use midday to avoid TZ issues
+        
+        if (unidade === 'dias') {
+            data.setDate(data.getDate() + valor);
+        } else if (unidade === 'meses') {
+            const dayOfMonth = data.getDate();
+            data.setMonth(data.getMonth() + valor);
+            // Handling month overflow (e.g. 31 Jan + 1 month = 28/29 Feb instead of 3rd March)
+            if (data.getDate() !== dayOfMonth) {
+                data.setDate(0);
+            }
+        } else if (unidade === 'anos') {
+            data.setFullYear(data.getFullYear() + valor);
+        }
+        
         return data.toISOString().split('T')[0];
+    };
+
+    const getFrequenciaLabel = (valor: number, unidade: string) => {
+        const labels: Record<string, { s: string; p: string }> = {
+            dias: { s: 'Dia', p: 'Dias' },
+            meses: { s: 'Mês', p: 'Meses' },
+            anos: { s: 'Ano', p: 'Anos' }
+        };
+        const l = labels[unidade] || labels.meses;
+        return `${valor} ${valor === 1 ? l.s : l.p}`.toUpperCase();
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -77,18 +103,19 @@ export function ManutencoesPage() {
             return;
         }
 
-        if (formData.frequenciaMeses < 1) {
-            showToast('A frequência deve ser de pelo menos 1 mês.', 'warning');
+        if (formData.frequenciaValor < 1) {
+            showToast('A frequência deve ser de pelo menos um período.', 'warning');
             return;
         }
 
         try {
-            const proximaData = calcProximaData(formData.ultimaRealizacao, formData.frequenciaMeses);
+            const proximaData = calcProximaData(formData.ultimaRealizacao, formData.frequenciaValor, formData.frequenciaUnidade);
             if (editingManutencao) {
                 await updateManutencao({
                     ...editingManutencao,
                     titulo: formData.titulo,
-                    frequenciaMeses: formData.frequenciaMeses,
+                    frequenciaValor: formData.frequenciaValor,
+                    frequenciaUnidade: formData.frequenciaUnidade,
                     ultimaRealizacao: formData.ultimaRealizacao,
                     proximaData
                 });
@@ -97,7 +124,8 @@ export function ManutencoesPage() {
                 const nova: Manutencao = {
                     id: crypto.randomUUID(),
                     titulo: formData.titulo,
-                    frequenciaMeses: formData.frequenciaMeses,
+                    frequenciaValor: formData.frequenciaValor,
+                    frequenciaUnidade: formData.frequenciaUnidade,
                     ultimaRealizacao: formData.ultimaRealizacao,
                     proximaData
                 };
@@ -265,7 +293,7 @@ export function ManutencoesPage() {
                                                     <span className="text-sm font-black text-slate-800 uppercase tracking-tight leading-tight">{m.titulo}</span>
                                                     <div className="flex items-center gap-2 mt-0.5">
                                                         <HabitaBadge variant="neutral" size="xs">
-                                                            {m.frequenciaMeses} {m.frequenciaMeses === 1 ? 'Mês' : 'Meses'}
+                                                            {getFrequenciaLabel(m.frequenciaValor || m.frequenciaMeses || 1, m.frequenciaUnidade || 'meses')}
                                                         </HabitaBadge>
                                                     </div>
                                                 </div>
@@ -326,7 +354,7 @@ export function ManutencoesPage() {
                                     </HabitaTD>
                                     <HabitaTD className="hidden md:table-cell py-5">
                                         <HabitaBadge variant="neutral" size="xs">
-                                            {m.frequenciaMeses} {m.frequenciaMeses === 1 ? 'MÊS' : 'MESES'}
+                                            {getFrequenciaLabel(m.frequenciaValor || m.frequenciaMeses || 1, m.frequenciaUnidade || 'meses')}
                                         </HabitaBadge>
                                     </HabitaTD>
                                     <HabitaTD className="hidden md:table-cell py-5">
@@ -404,15 +432,30 @@ export function ManutencoesPage() {
                     />
 
                     <div className="grid grid-cols-2 gap-4">
-                        <HabitaInput
-                            label="Frequência (Meses)"
-                            type="number"
-                            required
-                            min={1}
-                            max={120}
-                            value={formData.frequenciaMeses}
-                            onChange={e => setFormData({ ...formData, frequenciaMeses: parseInt(e.target.value) || 1 })}
-                        />
+                        <div className="space-y-2">
+                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 pl-1">Frequência</label>
+                             <div className="flex gap-2">
+                                <HabitaInput
+                                    type="number"
+                                    required
+                                    min={1}
+                                    max={999}
+                                    value={formData.frequenciaValor}
+                                    onChange={e => setFormData({ ...formData, frequenciaValor: parseInt(e.target.value) || 1 })}
+                                    className="flex-1"
+                                    placeholder="Valor"
+                                />
+                                <select 
+                                    className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-xl focus:ring-violet-500 focus:border-violet-500 block w-[100px] p-2.5 font-bold uppercase tracking-tight outline-none"
+                                    value={formData.frequenciaUnidade}
+                                    onChange={e => setFormData({ ...formData, frequenciaUnidade: e.target.value as any })}
+                                >
+                                    <option value="dias">Dias</option>
+                                    <option value="meses">Meses</option>
+                                    <option value="anos">Anos</option>
+                                </select>
+                             </div>
+                        </div>
 
                         <div className="space-y-2">
                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 pl-1">Última Realização</label>
@@ -424,7 +467,7 @@ export function ManutencoesPage() {
                     </div>
 
                     {/* Preview da próxima data calculada */}
-                    {formData.ultimaRealizacao && formData.frequenciaMeses > 0 && (
+                    {formData.ultimaRealizacao && formData.frequenciaValor > 0 && (
                         <div className="bg-violet-50 border border-violet-100 rounded-xl px-4 py-4 flex items-center gap-4 animate-in fade-in slide-in-from-top-2 duration-500">
                             <div className="w-10 h-10 bg-violet-600 rounded-lg flex items-center justify-center text-white shrink-0 shadow-sm">
                                 <Clock size={20} />
@@ -432,7 +475,7 @@ export function ManutencoesPage() {
                             <div>
                                 <span className="text-[9px] font-black text-violet-400 uppercase tracking-[0.2em]">Próxima data estimada</span>
                                 <p className="text-sm font-black text-violet-700 uppercase tracking-tight">
-                                    {new Date(calcProximaData(formData.ultimaRealizacao, formData.frequenciaMeses) + 'T00:00:00').toLocaleDateString('pt-BR', {
+                                    {new Date(calcProximaData(formData.ultimaRealizacao, formData.frequenciaValor, formData.frequenciaUnidade) + 'T00:00:00').toLocaleDateString('pt-BR', {
                                         day: '2-digit',
                                         month: 'long',
                                         year: 'numeric'
