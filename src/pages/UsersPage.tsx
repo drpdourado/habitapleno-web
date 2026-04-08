@@ -4,8 +4,9 @@ import { useToast } from '../contexts/ToastContext';
 import { 
     Users, UserPlus, Shield, 
     AlertTriangle, Edit, Trash2, Key,
-    Info, Search, User, Check
+    Info, Search, User, Check, Camera, X
 } from 'lucide-react';
+import imageCompression from 'browser-image-compression';
 import { getRoleFromProfile, hasPermission } from '../utils/rbac';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
@@ -39,6 +40,7 @@ export interface UserProfile {
     vinculos?: Vinculo[];
     vinculosCondoIds?: string[];
     condominiumId?: string;
+    photoURL?: string;
 }
 
 export interface AccessProfile {
@@ -56,6 +58,9 @@ const UsersPage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [photoFile, setPhotoFile] = useState<File | null>(null);
+    const [photoPreview, setPhotoPreview] = useState<string>('');
     const [searchQuery, setSearchQuery] = useState('');
 
     // Data state
@@ -69,7 +74,8 @@ const UsersPage = () => {
         phone: '',
         password: '',
         profileId: '',
-        unitId: ''
+        unitId: '',
+        photoURL: ''
     });
 
     // Edit State
@@ -78,7 +84,8 @@ const UsersPage = () => {
         name: '',
         phone: '',
         profileId: '',
-        unitId: ''
+        unitId: '',
+        photoURL: ''
     });
 
     // Delete State
@@ -105,6 +112,53 @@ const UsersPage = () => {
             showToast('Erro ao carregar dados dos usuários.', 'error');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            // Preview
+            const reader = new FileReader();
+            reader.onloadend = () => setPhotoPreview(reader.result as string);
+            reader.readAsDataURL(file);
+
+            // Compress
+            const options = {
+                maxSizeMB: 0.15,
+                maxWidthOrHeight: 400,
+                useWebWorker: true,
+            };
+            const compressedFile = await imageCompression(file, options);
+            setPhotoFile(compressedFile);
+        } catch (error) {
+            console.error('Error handling file:', error);
+            showToast('Erro ao processar imagem.', 'error');
+        }
+    };
+
+    const uploadPhoto = async (): Promise<string | null> => {
+        if (!photoFile) return null;
+        
+        setIsUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', photoFile);
+            formData.append('path', 'perfis');
+            
+            const response = await api.post('/storage/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            
+            return response.data.url || response.data.data?.url || null;
+        } catch (error) {
+            console.error('Upload failed:', error);
+            showToast('Falha ao subir imagem.', 'error');
+            return null;
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -140,7 +194,13 @@ const UsersPage = () => {
         }
 
         try {
-            await api.post('/users', formData);
+            // Upload photo first if selected
+            let finalPhotoURL = '';
+            if (photoFile) {
+                finalPhotoURL = await uploadPhoto() || '';
+            }
+
+            await api.post('/users', { ...formData, photoURL: finalPhotoURL });
             showToast('Usuário criado com sucesso!', 'success');
             resetForm();
             setIsCreateModalOpen(false);
@@ -159,8 +219,11 @@ const UsersPage = () => {
             name: u.name || '',
             phone: u.phone || '',
             profileId: u.profileId || '',
-            unitId: u.unitId || ''
+            unitId: u.unitId || '',
+            photoURL: u.photoURL || ''
         });
+        setPhotoPreview(u.photoURL || '');
+        setPhotoFile(null);
     };
 
     const handleSaveEdit = async () => {
@@ -177,8 +240,17 @@ const UsersPage = () => {
                 phone: editFormData.phone,
                 profileId: editFormData.profileId,
                 role: newRole,
-                unitId: editFormData.unitId || undefined
+                unitId: editFormData.unitId || undefined,
+                photoURL: editFormData.photoURL
             };
+
+            // If a new photo file was picked, upload it first
+            if (photoFile) {
+                const uploadedURL = await uploadPhoto();
+                if (uploadedURL) {
+                    updatedProfile.photoURL = uploadedURL;
+                }
+            }
 
             await api.put(`/users/${editingUser.uid}`, updatedProfile);
             
@@ -224,8 +296,11 @@ const UsersPage = () => {
             phone: '',
             password: '',
             profileId: profiles[0]?.id || '',
-            unitId: ''
+            unitId: '',
+            photoURL: ''
         });
+        setPhotoFile(null);
+        setPhotoPreview('');
     };
 
     const getProfileName = (id?: string) => profiles.find(p => p.id === id)?.name || 'Morador';
@@ -351,8 +426,12 @@ const UsersPage = () => {
 
                                             {/* Desktop Layout */}
                                             <HabitaTD className="hidden md:table-cell">
-                                                <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-300 border border-slate-200/60 transition-colors group-hover:bg-indigo-600 group-hover:text-white">
-                                                    <User size={14} />
+                                             <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-200 shadow-sm shrink-0 overflow-hidden">
+                                                    {u.photoURL ? (
+                                                        <img src={u.photoURL} alt={u.name} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <User size={14} />
+                                                    )}
                                                 </div>
                                             </HabitaTD>
                                             <HabitaTD className="hidden md:table-cell">
@@ -447,7 +526,40 @@ const UsersPage = () => {
                     </div>
                 }
             >
-                <form onSubmit={handleCreateUser} className="space-y-8 pb-32">
+                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-center bg-slate-50/50">
+                    <div className="relative group">
+                        <div className="w-24 h-24 rounded-3xl bg-white border-2 border-slate-200 shadow-sm flex items-center justify-center overflow-hidden relative">
+                            {isUploading && (
+                                <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center z-10">
+                                    <HabitaSpinner size="sm" />
+                                </div>
+                            )}
+                            {photoPreview ? (
+                                <img src={photoPreview} className="w-full h-full object-cover" alt="Preview" />
+                            ) : (
+                                <User size={40} className="text-slate-200" />
+                            )}
+                        </div>
+                        <label className="absolute -bottom-2 -right-2 w-8 h-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-110 active:scale-95 border-2 border-white">
+                            <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} disabled={isUploading} />
+                            <Camera size={14} />
+                        </label>
+                        {photoPreview && (
+                            <button 
+                                onClick={(e) => { 
+                                    e.preventDefault(); 
+                                    setPhotoFile(null); 
+                                    setPhotoPreview(''); 
+                                }}
+                                className="absolute -top-2 -right-2 w-6 h-6 bg-rose-500 hover:bg-rose-600 text-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-110"
+                            >
+                                <X size={12} />
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                <form onSubmit={handleCreateUser} className="p-6 space-y-8 pb-32">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                         <div className="space-y-6">
                             <div className="flex items-center gap-3 mb-2">
@@ -556,7 +668,41 @@ const UsersPage = () => {
                     </div>
                 }
             >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-32">
+                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-center bg-slate-50/50">
+                    <div className="relative group">
+                        <div className="w-24 h-24 rounded-3xl bg-white border-2 border-slate-200 shadow-sm flex items-center justify-center overflow-hidden relative">
+                            {isUploading && (
+                                <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center z-10">
+                                    <HabitaSpinner size="sm" />
+                                </div>
+                            )}
+                            {photoPreview ? (
+                                <img src={photoPreview} className="w-full h-full object-cover" alt="Preview" />
+                            ) : (
+                                <User size={40} className="text-slate-200" />
+                            )}
+                        </div>
+                        <label className="absolute -bottom-2 -right-2 w-8 h-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-110 active:scale-95 border-2 border-white">
+                            <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} disabled={isUploading} />
+                            <Camera size={14} />
+                        </label>
+                        {photoPreview && (
+                            <button 
+                                onClick={(e) => { 
+                                    e.preventDefault(); 
+                                    setPhotoFile(null); 
+                                    setPhotoPreview(''); 
+                                    setEditFormData(p => ({ ...p, photoURL: '' }));
+                                }}
+                                className="absolute -top-2 -right-2 w-6 h-6 bg-rose-500 hover:bg-rose-600 text-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-110"
+                            >
+                                <X size={12} />
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 pb-32">
                     <div className="space-y-6">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-sm">

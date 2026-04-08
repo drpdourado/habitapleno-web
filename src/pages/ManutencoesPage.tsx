@@ -441,7 +441,10 @@ export function ManutencoesPage() {
                                     min={1}
                                     max={999}
                                     value={formData.frequenciaValor}
-                                    onChange={e => setFormData({ ...formData, frequenciaValor: parseInt(e.target.value) || 1 })}
+                                    onChange={e => {
+                                        const val = e.target.value;
+                                        setFormData({ ...formData, frequenciaValor: val === '' ? '' as any : parseInt(val) || 0 });
+                                    }}
                                     className="flex-1"
                                     placeholder="Valor"
                                 />
