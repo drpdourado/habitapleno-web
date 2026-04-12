@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import api from '../services/api';
 import { auth } from '../firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 
 interface User {
   uid: string;
@@ -51,6 +52,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSelectingCondo, setIsSelectingCondo] = useState(false);
+  
+  // Setup Push Notifications (Hooks watch for `user?.uid` changes)
+  usePushNotifications(user?.uid || null);
 
   const refreshProfile = async () => {
     try {

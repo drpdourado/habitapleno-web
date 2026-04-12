@@ -11,8 +11,13 @@
   },
   "dependencies": {
     "@capacitor/android": "^8.3.0",
+    "@capacitor/camera": "^8.0.2",
     "@capacitor/cli": "^8.3.0",
     "@capacitor/core": "^8.3.0",
+    "@capacitor/filesystem": "^8.1.2",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/push-notifications": "^8.0.3",
+    "@ionic/pwa-elements": "^3.4.0",
     "axios": "^1.13.6",
     "browser-image-compression": "^2.0.2",
     "clsx": "^2.1.1",

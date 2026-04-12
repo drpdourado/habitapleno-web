@@ -7,6 +7,7 @@ import {
     Info, Search, User, Check, Camera, X
 } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
+import { takePhoto } from '../utils/camera';
 import { getRoleFromProfile, hasPermission } from '../utils/rbac';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
@@ -115,8 +116,8 @@ const UsersPage = () => {
         }
     };
 
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
+    const handlePhotoSelection = async () => {
+        const file = await takePhoto();
         if (!file) return;
 
         try {
@@ -540,10 +541,14 @@ const UsersPage = () => {
                                 <User size={40} className="text-slate-200" />
                             )}
                         </div>
-                        <label className="absolute -bottom-2 -right-2 w-8 h-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-110 active:scale-95 border-2 border-white">
-                            <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} disabled={isUploading} />
+                        <button 
+                            type="button"
+                            onClick={handlePhotoSelection}
+                            disabled={isUploading}
+                            className="absolute -bottom-2 -right-2 w-8 h-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-95 border-2 border-white disabled:opacity-50"
+                        >
                             <Camera size={14} />
-                        </label>
+                        </button>
                         {photoPreview && (
                             <button 
                                 onClick={(e) => { 
@@ -682,10 +687,14 @@ const UsersPage = () => {
                                 <User size={40} className="text-slate-200" />
                             )}
                         </div>
-                        <label className="absolute -bottom-2 -right-2 w-8 h-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-110 active:scale-95 border-2 border-white">
-                            <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} disabled={isUploading} />
+                        <button 
+                            type="button"
+                            onClick={handlePhotoSelection}
+                            disabled={isUploading}
+                            className="absolute -bottom-2 -right-2 w-8 h-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-95 border-2 border-white disabled:opacity-50"
+                        >
                             <Camera size={14} />
-                        </label>
+                        </button>
                         {photoPreview && (
                             <button 
                                 onClick={(e) => { 

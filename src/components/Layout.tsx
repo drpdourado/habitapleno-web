@@ -16,7 +16,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
             {/* Main Content Area */}
             <main className="flex-1 overflow-x-hidden md:overflow-y-auto">
-                <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 pt-4 pb-24 md:py-6 transition-all duration-500">
+                <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 pt-16 pb-24 md:pt-6 md:pb-6 transition-all duration-500">
                     {children}
                 </div>
             </main>

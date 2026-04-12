@@ -4,6 +4,7 @@ import api from '../services/api';
 import { useToast } from '../contexts/ToastContext';
 import { User, Mail, ShieldCheck, LogOut, Key, Fingerprint, Edit2, Check, X, Lock, Phone, Eye, EyeOff, Camera } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
+import { takePhoto } from '../utils/camera';
 import { HabitaSpinner } from '../components/ui/HabitaSpinner';
 import { HabitaButton } from '../components/ui/HabitaButton';
 import { HabitaContainer, HabitaContainerHeader, HabitaContainerContent } from '../components/ui/HabitaContainer';
@@ -17,7 +18,7 @@ import { HabitaModal } from '../components/ui/HabitaModal';
 import { useAuth } from '../contexts/AuthContext';
 
 const ProfilePage = () => {
-    const { user, profile, isAdmin, signOut, resetPassword } = useAuth();
+    const { user, profile, isAdmin, signOut, resetPassword, refreshProfile } = useAuth();
     const navigate = useNavigate();
 
 
@@ -71,8 +72,9 @@ const ProfilePage = () => {
         }
     };
 
-    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
+    const handlePhotoUpload = async (fileInput?: File) => {
+        let file = fileInput;
+
         if (!file || !user) return;
 
         setIsUploading(true);
@@ -90,6 +92,8 @@ const ProfilePage = () => {
             // It handles BOTH Storage Upload and Firestore Update in one go
             const formData = new FormData();
             formData.append('file', compressedFile);
+            formData.append('path', 'perfis');
+            
             console.log('Sending photo to /api/profile via POST...');
             const response = await api.post('/profile', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
@@ -102,8 +106,8 @@ const ProfilePage = () => {
             }
 
             showToast('Foto de perfil atualizada com sucesso!', 'success');
-            // Mantemos o reload apenas para garantir que o Contexto (useAuth) se atualize
-            setTimeout(() => window.location.reload(), 1500);
+            // Atualiza os dados do perfil no contexto global sem recarregar a página inteira
+            await refreshProfile();
         } catch (error: any) {
             console.error('Detailed photo upload error:', error);
             console.error('Error status:', error.response?.status);
@@ -172,16 +176,17 @@ const ProfilePage = () => {
                                             )}
                                         </div>
 
-                                        <label className="absolute -bottom-2 -right-2 w-10 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-110 active:scale-95 border-2 border-white">
-                                            <input
-                                                type="file"
-                                                className="hidden"
-                                                accept="image/*"
-                                                onChange={handlePhotoUpload}
-                                                disabled={isUploading}
-                                            />
+                                        <button 
+                                            type="button"
+                                            onClick={async () => {
+                                                const file = await takePhoto();
+                                                if (file) handlePhotoUpload(file);
+                                            }}
+                                            disabled={isUploading}
+                                            className="absolute -bottom-2 -right-2 w-10 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl flex items-center justify-center shadow-xl transition-all hover:scale-110 active:scale-95 border-4 border-white disabled:opacity-50"
+                                        >
                                             <Camera size={18} />
-                                        </label>
+                                        </button>
                                     </div>
 
                                     <div className="flex flex-col items-center md:items-start text-center md:text-left gap-2">

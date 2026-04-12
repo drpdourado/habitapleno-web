@@ -289,6 +289,40 @@ export const HabitaNavigation: React.FC<HabitaNavigationProps> = ({
         )}
       </aside>
 
+      {/* --- MOBILE TOP HEADER BAR --- */}
+      {extraHeaderActions && (
+        <header className={cn(
+          "md:hidden fixed top-0 left-0 right-0 h-14 z-[99] flex items-center justify-between px-4 border-b backdrop-blur-md",
+          isDark
+            ? "bg-slate-900/95 border-slate-800 text-white"
+            : "bg-white/95 border-slate-200 text-slate-900"
+        )}>
+          {brand && (
+            <NavLink to="/" className="flex items-center gap-2">
+              <div className="border-l-4 border-indigo-600 pl-2 py-0.5">
+                <span className={cn(
+                  "text-sm font-bold tracking-tight leading-tight block",
+                  isDark ? "text-white" : "text-slate-900"
+                )}>
+                  {brand.prefix}
+                </span>
+                {brand.suffix && (
+                  <span className={cn(
+                    "text-[10px] font-light tracking-wide leading-tight block",
+                    isDark ? "text-slate-400" : "text-slate-500"
+                  )}>
+                    {brand.suffix}
+                  </span>
+                )}
+              </div>
+            </NavLink>
+          )}
+          <div className="flex items-center gap-1">
+            {extraHeaderActions}
+          </div>
+        </header>
+      )}
+
       <nav className={cn(
         "md:hidden fixed bottom-4 left-4 right-4 h-16 rounded-2xl border backdrop-blur-md z-[100] flex items-center justify-around px-2 shadow-2xl shadow-indigo-900/10",
         isDark 
@@ -297,7 +331,21 @@ export const HabitaNavigation: React.FC<HabitaNavigationProps> = ({
       )}>
         {(() => {
           const allFlatItems = groups.flatMap(g => g.items);
-          const primaryItems = allFlatItems.slice(0, 4);
+          
+          // Para o síndico: pega os 3 primeiros itens de admin + 1º item de operação (Portaria)
+          // Para outros perfis: pega os 4 primeiros do flat como antes
+          const adminGroup = groups.find(g => g.title === 'Administração');
+          const operationGroup = groups.find(g => g.title === 'Operação');
+          
+          let primaryItems: typeof allFlatItems;
+          if (adminGroup && operationGroup) {
+            primaryItems = [
+              ...adminGroup.items.slice(0, 3),
+              operationGroup.items[0]
+            ].filter(Boolean);
+          } else {
+            primaryItems = allFlatItems.slice(0, 4);
+          }
           
           return (
             <>

@@ -4,6 +4,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { HabitaIconActionButton } from './HabitaIconActionButton';
 import { HabitaSpinner } from './HabitaSpinner';
+import { takePhoto } from '../../utils/camera';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -96,8 +97,16 @@ export const HabitaFileUpload: React.FC<HabitaFileUploadProps> = ({
         }
     };
 
-    const handleClick = () => {
-        if (!disabled && !isLoading) {
+    const handleClick = async () => {
+        if (disabled || isLoading) return;
+
+        // Se o upload aceita imagens, usamos o utilitário do Capacitor
+        if (accept?.includes('image') && !multiple) {
+            const file = await takePhoto();
+            if (file) {
+                processFiles({ 0: file, length: 1 } as unknown as FileList);
+            }
+        } else {
             fileInputRef.current?.click();
         }
     };
